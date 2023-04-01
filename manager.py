@@ -36,7 +36,7 @@ class Manager:
     Manages the network
     """
     s: socket.socket
-    connections: dict[(str, int), socket.socket]
+    connections: dict[(str, int), (socket.socket, (str, int))]
     accept_thread: threading.Thread
     broadcast_peers_thread: threading.Thread
     recv_msg_thread: threading.Thread
@@ -61,9 +61,13 @@ class Manager:
         """
         while True:
             c, addr = self.s.accept()
-            self.connections[addr] = c
-            print(f"Got connection from {addr}")
 
+
+            c.send(b'Send port')
+            c.settimeout(2)
+            peer_addr = pickle.loads(c.recv(512))
+            self.connections[addr] = (c, peer_addr)
+            print(f"Got connection from {addr, peer_addr}")
             self.recv_msg_thread = threading.Thread(target=self.recv_msg, args=(c, addr))
             self.recv_msg_thread.start()
             self.start_broadcast_peers_thread()
@@ -73,6 +77,7 @@ class Manager:
         revive msgs from the peers
         """
         while True:
+            c.settimeout(10000)
             try:
                 msg = c.recv(512).decode()
                 if msg == 'close':
@@ -84,10 +89,10 @@ class Manager:
                 if msg == 'get_peers':
                     conn = pickle.dumps({
                         "type": "peers",
-                        "peers": list(self.connections.keys())
+                        "peers": [x[1] for a, x in self.connections.items()]
                     })
                     c.send(conn)
-                    break
+
             except Exception as e:
                 print(f"got exception {e} while receiving from addr {addr}")
                 break
@@ -100,7 +105,7 @@ class Manager:
         while True:
             closed_connections = []  # stores the keys for closed connections
             for addr, c in self.connections.items():
-                if is_socket_closed(c):
+                if is_socket_closed(c[0]):
                     closed_connections.append(addr)
 
             n_closed = len(closed_connections)
@@ -125,10 +130,10 @@ class Manager:
         """
         conn = pickle.dumps({
             "type": "peers",
-            "peers": list(self.connections.keys())
+            "peers": [ x[1] for a, x in self.connections.items() ]
         })
         for addr in self.connections:
-            self.connections[addr].send(conn)
+            self.connections[addr][0].send(conn)
 
     def run(self):
         """
