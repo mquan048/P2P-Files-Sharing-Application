@@ -3,12 +3,13 @@ import threading
 import pickle
 
 
+
 class Peer:
     s: socket.socket
     peers: list[(str, int)]
 
     port: int
-    manager_port = 1235
+    manager_port = 1233
 
     def __init__(self, port_no: int):
         self.port = port_no
@@ -29,10 +30,12 @@ class Peer:
         """
         while True:
             try:
-
                 msg = self.s.recv(512)
-                self.peers = pickle.loads(msg)
-                print(self.peers)
+
+                msg = pickle.loads(msg)
+                if(msg!="testing conn"):
+                    self.peers = msg['peers']
+                    print(self.peers)
             except ConnectionAbortedError:
                 print("connection is closed")
                 break
@@ -42,6 +45,10 @@ class Peer:
         self.s.close()
 
     def disconnect(self):
+        """
+        Disconnect the connected socket.
+        """
+        self.s.send(b"close")
         self.s.close()
 
 
