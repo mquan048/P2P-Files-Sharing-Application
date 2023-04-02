@@ -1,3 +1,4 @@
+from math import ceil
 import socket
 import threading
 import pickle
@@ -6,13 +7,40 @@ import os
 PEERS_DIR = './Peers/'
 PEER_TIMEOUT = 100
 
+
+class completeFile:
+    chunk_size = 2048
+
+    def __init__(self, filename: str, owner: str):
+        self.filename = filename
+        self.path = "./Peers/" + owner+"/"+filename
+        self.size = self.get_size(self.path)
+        self.owner = owner
+        self.fp = open(self.path, 'rb')
+        self.n_chunks = ceil(self.size/self.chunk_size)
+
+    def get_chunk_no(self, chunk_no):
+        return self._get_chunk(chunk_no*self.chunk_size)
+
+    def _get_chunk(self, offset):
+        self.fp.seek(offset, 0)
+        chunk = self.fp.read(self.chunk_size)
+        return chunk
+
+    def get_size(self, path):
+        return os.path.getsize(path)
+
+
+
 class Peer:
     s: socket.socket
-    peers: list[(str, int)] # list of all peers
+    peers: list[(str, int)]  # list of all peers
     peers_connections: dict[(str, int), socket.socket]
     port: int
     manager_port = 1233
     addr: (str, int)
+    available_files: dict[str, completeFile]
+
 
     def __init__(self, port_no: int, name: str, ip_addr='127.0.0.1'):
         self.port = port_no
@@ -22,7 +50,10 @@ class Peer:
         if not os.path.isdir(self.directory):
             os.mkdir(self.directory)
 
-        self.available_files = os.listdir(self.directory)
+        self.available_files = {}
+        for f in os.listdir(self.directory):
+            self.available_files[f] = completeFile(f, self.name)
+
         self.s = socket.socket()
 
         self.addr = (ip_addr, port_no)
@@ -38,8 +69,6 @@ class Peer:
         msg = self.s.recv(512).decode()
         if msg == 'Send port':
             self.s.send(pickle.dumps(self.addr))
-
-
 
     def receive(self):
         """
@@ -76,7 +105,6 @@ class Peer:
         self.s.close()
         self.my_socket.close()
 
-
     def connect_to_peers(self):
         """
         Listens to other peers and adds into peer connections
@@ -104,17 +132,14 @@ class Peer:
             if msg['type'] == 'request_file':
                 req_file_name = msg['data']
                 if req_file_name in self.available_files:
-
                     file_list = pickle.dumps({
-                      "type": "available_file",
-                      "data": {
-                          "filesize": str(os.path.getsize(self.directory+req_file_name))
-                      }
+                        "type": "available_file",
+                        "data": {
+                            "filesize": str(self.available_files[req_file_name].size)
+                        }
                     })
 
                     c.send(file_list)
-
-
 
     def connect_to_peer(self, addr):
         """
@@ -127,7 +152,6 @@ class Peer:
         except:
             print("could not connect to ", addr)
         return sock
-
 
     def connect_and_fetch_file_details(self, addr, file_name, file_details: dict[str, object]):
         c = self.connect_to_peer(addr)
@@ -149,7 +173,7 @@ class Peer:
             print("socket did not respond")
             return
 
-    def get_peers_with_file(self, file_name:str):
+    def get_peers_with_file(self, file_name: str):
         """
         Check which peers have the file and what parts of it they have.
         Details of the file such as size are also sent.
@@ -160,14 +184,17 @@ class Peer:
             "peers_with_file": []
         }
         for p in self.peers:
-            if p[1] != self.port: #TODO: store our IP address instead of port
-                get_details_thread = threading.Thread(target=self.connect_and_fetch_file_details, args=(p, file_name, file_detials))
+            if p[1] != self.port:  # TODO: store our IP address instead of port
+                get_details_thread = threading.Thread(target=self.connect_and_fetch_file_details,
+                                                      args=(p, file_name, file_detials))
                 running_thread.append(get_details_thread)
                 running_thread[-1].start()
         print(running_thread)
         for threads in running_thread:
             threads.join()
         print(file_detials)
+
+
 
 
 def start_peer(port_no, name):
@@ -179,7 +206,6 @@ def start_peer(port_no, name):
     connect_peers_thread.start()
 
     return p
-
 
 
 if __name__ == "__main__":
@@ -197,7 +223,7 @@ if __name__ == "__main__":
         inp = input(">")
         if inp == 'cls':
             p.disconnect()
-            del(p)
+            del (p)
 
         if inp == "conn":
             start_peer(port_no, name)
