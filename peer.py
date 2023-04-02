@@ -4,6 +4,9 @@ import threading
 import pickle
 import os
 
+import logging
+
+
 PEERS_DIR = './Peers/'
 PEER_TIMEOUT = 100
 
@@ -109,9 +112,9 @@ class Peer:
                 msg = pickle.loads(msg)
                 if msg != "testing conn":
                     self.peers = msg['peers']
-                    print(f"available peers are {self.peers}")
+                    logging.info(f"available peers are {self.peers}")
             except ConnectionAbortedError:
-                print("connection is closed")
+                print("connection with manager is closed")
                 break
 
     def update_peers(self):
@@ -158,7 +161,7 @@ class Peer:
             try:
                 msg = pickle.loads(c.recv(2048))
 
-                # TODO: open a thread for each one
+
                 if msg['type'] == 'request_file':
                     req_file_name = msg['data']
                     if req_file_name in self.available_files:
@@ -198,7 +201,7 @@ class Peer:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             sock.connect(addr)
-            print(f"Connected to Peer {addr}")
+            logging.info(f"Connected to Peer {addr}")
         except:
             print("could not connect to ", addr)
         return sock
@@ -220,7 +223,7 @@ class Peer:
 
 
         except socket.timeout:
-            print("socket did not respond")
+            print("socket did not respond while fetching detail of file")
 
         c.close()
 
@@ -266,21 +269,21 @@ class Peer:
         except socket.timeout:
             print(f"peer {peer_addr} did not send the file")
 
-        print(f"received the chunk {chunk_no}")
+        logging.info(f"received the chunk {chunk_no}")
         c.close()
 
 
 
     def receive_file(self, filename):
         file_details = p.get_peers_with_file(file_name)
-        print(file_details)
+        logging.info(f"{file_details}")
         recieving_file = incompleteFile(filename, self.name, int(file_details['size']))
 
         while len(recieving_file.get_needed()) != 0:
             self.update_peers()
             peers_with_file = self.get_peers_with_file(file_name)['peers_with_file']
             if len(peers_with_file) == 0:
-                print("there are no peers with file")
+                print(f"there are no peers with file {filename}")
                 del recieving_file
                 return
 
@@ -304,6 +307,7 @@ class Peer:
 
         recieving_file.write_file()
         self.available_files[file_name] = completeFile(filename, self.name)
+        print(f"recieved {filename}")
 
 def start_peer(port_no, name):
     p = Peer(port_no, name)
@@ -319,27 +323,28 @@ def start_peer(port_no, name):
 if __name__ == "__main__":
     port_no = int(input("Enter Port Number: "))
     name = input("Enter your name: ")
+    logging.basicConfig(filename=name+'.log', encoding='utf-8', level=logging.DEBUG)
     p = start_peer(port_no, name)
-    print(f"our available files are: {p.available_files}")
+    print(f"our available files are: {list(p.available_files.keys())}")
     print("Give one of the commands:")
-    print("cls: Close the connection with manager")
-    print("conn: connect to manager")
-    print("get_peers: update the peers list")
-    print("get_files: get files from peers\n\n")
+    print("0|cls: Close the connection with manager")
+    print("1|conn: connect to manager")
+    print("2|get_peers: update the peers list")
+    print("3|get_files: get files from peers\n\n")
 
     while True:
         inp = input(">")
-        if inp == 'cls':
+        if inp == 'cls' or inp == '0':
             p.disconnect()
             del (p)
 
-        if inp == "conn":
+        if inp == "conn" or inp == '1':
             start_peer(port_no, name)
 
-        if inp == "get_peers":
+        if inp == "get_peers" or inp == '2':
             update_peers_thread = threading.Thread(target=p.update_peers)
             update_peers_thread.start()
 
-        if inp == "get_files":
+        if inp == "get_files" or inp == '3':
             file_name = input("Enter file name : ")
             p.receive_file(file_name)
