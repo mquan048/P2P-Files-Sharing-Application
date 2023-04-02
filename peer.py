@@ -344,6 +344,8 @@ if __name__ == "__main__":
         if inp == "get_peers" or inp == '2':
             update_peers_thread = threading.Thread(target=p.update_peers)
             update_peers_thread.start()
+            update_peers_thread.join()
+            print("available peers are: p.peers")
 
         if inp == "get_files" or inp == '3':
             file_name = input("Enter file name : ")
