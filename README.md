@@ -16,8 +16,8 @@ each of the peers. After receiving the whole file, peer reassembles
 the file and saves it.
 
 ## To run the file
-1. `python 200020007_manager.py`
-2. `python 200020007_peer.py`
+1. `python manager.py`
+2. `python peer.py`
 
 Run running peer, it will ask you to select a _**port**_ and **_name_**.
 
