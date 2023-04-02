@@ -323,7 +323,7 @@ def start_peer(port_no, name):
 if __name__ == "__main__":
     port_no = int(input("Enter Port Number: "))
     name = input("Enter your name: ")
-    logging.basicConfig(filename=name+'.log', encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(filename="logs/"+name+'.log', encoding='utf-8', level=logging.DEBUG)
     p = start_peer(port_no, name)
     print(f"our available files are: {list(p.available_files.keys())}")
     print("Give one of the commands:")
