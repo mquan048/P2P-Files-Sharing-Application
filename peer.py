@@ -8,16 +8,20 @@ PEERS_DIR = './Peers/'
 PEER_TIMEOUT = 100
 
 
-class completeFile:
+class file:
     chunk_size = 2048
-
     def __init__(self, filename: str, owner: str):
         self.filename = filename
         self.path = "./Peers/" + owner+"/"+filename
+
+
+class completeFile(file):
+
+    def __init__(self, filename: str, owner: str):
+        super().__init__(filename, owner)
         self.size = self.get_size(self.path)
-        self.owner = owner
-        self.fp = open(self.path, 'rb')
         self.n_chunks = ceil(self.size/self.chunk_size)
+        self.fp = open(self.path, 'rb')
 
     def get_chunk_no(self, chunk_no):
         return self._get_chunk(chunk_no*self.chunk_size)
@@ -30,6 +34,30 @@ class completeFile:
     def get_size(self, path):
         return os.path.getsize(path)
 
+class incompleteFile(file):
+    def __init__(self, filename, owner, size):
+        super().__init__(filename, owner)
+        self.size = size
+        self.n_chunks = ceil(self.size/self.chunk_size)
+        self.needed_chunks = [i for i in range(self.n_chunks)]
+        self.received_chunks = {}
+        self.fp = open(self.path, 'wb')
+
+    def get_needed(self):
+        self.needed_chunks = []
+        for i in range(self.n_chunks):
+            if i not in self.received_chunks:
+               self.needed_chunks.append(i)
+        return self.needed_chunks
+
+    def write_chunk(self, buf, chunk_no):
+        self.received_chunks[chunk_no] = buf
+
+    def write_file(self):
+        if len(self.get_needed()) == 0:
+            with open(self.path, 'wb') as filep:
+                for i in range(self.n_chunks):
+                    filep.write(self.received_chunks[i])
 
 
 class Peer:
@@ -81,7 +109,7 @@ class Peer:
                 msg = pickle.loads(msg)
                 if msg != "testing conn":
                     self.peers = msg['peers']
-                    print(self.peers)
+                    print(f"available peers are {self.peers}")
             except ConnectionAbortedError:
                 print("connection is closed")
                 break
@@ -127,19 +155,41 @@ class Peer:
         """
 
         while True:
-            msg = pickle.loads(c.recv(2048))
-            print(msg)
-            if msg['type'] == 'request_file':
-                req_file_name = msg['data']
-                if req_file_name in self.available_files:
-                    file_list = pickle.dumps({
-                        "type": "available_file",
+            try:
+                msg = pickle.loads(c.recv(2048))
+
+                # TODO: open a thread for each one
+                if msg['type'] == 'request_file':
+                    req_file_name = msg['data']
+                    if req_file_name in self.available_files:
+                        file_details = pickle.dumps({
+                            "type": "available_file",
+                            "data": {
+                                "filesize": str(self.available_files[req_file_name].size)
+                            }
+                        })
+
+                        c.send(file_details)
+
+                if msg['type'] == 'request_chunk':
+                    file_name = msg['data']['filename']
+                    chunk_no = msg['data']['chunk_no']
+                    chunk = self.available_files[file_name].get_chunk_no(chunk_no)
+                    ret_msg = pickle.dumps({
+                        "type": "response_chunk",
                         "data": {
-                            "filesize": str(self.available_files[req_file_name].size)
+                            "chunk_no": chunk_no,
+                            "filename": file_name,
+                            "chunk": chunk
                         }
                     })
 
-                    c.send(file_list)
+                    c.send(ret_msg)
+            except EOFError: # TODO: don't know what is happening here.
+                pass
+
+
+
 
     def connect_to_peer(self, addr):
         """
@@ -163,15 +213,16 @@ class Peer:
         c.settimeout(PEER_TIMEOUT)
         try:
             msg = pickle.loads(c.recv(512))
-            print(msg)
+
             if msg['type'] == "available_file":
                 file_details['size'] = msg['data']['filesize']
                 file_details['peers_with_file'].append(addr)
-                print("populating file details")
+
 
         except socket.timeout:
             print("socket did not respond")
-            return
+
+        c.close()
 
     def get_peers_with_file(self, file_name: str):
         """
@@ -184,18 +235,75 @@ class Peer:
             "peers_with_file": []
         }
         for p in self.peers:
-            if p[1] != self.port:  # TODO: store our IP address instead of port
+            if p != self.addr:
                 get_details_thread = threading.Thread(target=self.connect_and_fetch_file_details,
                                                       args=(p, file_name, file_detials))
                 running_thread.append(get_details_thread)
                 running_thread[-1].start()
-        print(running_thread)
+
         for threads in running_thread:
             threads.join()
-        print(file_detials)
+
+        return file_detials
+
+    def get_chunk_from_peer(self, filename, peer_addr, chunk_no, incomp_file:incompleteFile):
+        c = self.connect_to_peer(peer_addr)
+        msg = pickle.dumps({
+            "type": "request_chunk",
+            "data": {
+                "filename": filename,
+                "chunk_no": chunk_no
+            }
+        })
+        c.send(msg)
+        c.settimeout(PEER_TIMEOUT)
+        try:
+            msg = pickle.loads(c.recv(4096))
+
+            if msg['type'] == "response_chunk":
+                incomp_file.write_chunk(msg['data']['chunk'], chunk_no)
+
+        except socket.timeout:
+            print(f"peer {peer_addr} did not send the file")
+
+        print(f"received the chunk {chunk_no}")
+        c.close()
 
 
 
+    def receive_file(self, filename):
+        file_details = p.get_peers_with_file(file_name)
+        print(file_details)
+        recieving_file = incompleteFile(filename, self.name, int(file_details['size']))
+
+        while len(recieving_file.get_needed()) != 0:
+            self.update_peers()
+            peers_with_file = self.get_peers_with_file(file_name)['peers_with_file']
+            if len(peers_with_file) == 0:
+                print("there are no peers with file")
+                del recieving_file
+                return
+
+            needed_chunks = recieving_file.get_needed()
+            i = 0
+            running_threads = []
+            for peer in peers_with_file:
+                if i < len(needed_chunks):
+                    get_chunk_thread = threading.Thread(
+                        target=self.get_chunk_from_peer,
+                        args=(filename, peer, needed_chunks[i], recieving_file)
+                    )
+                    running_threads.append(get_chunk_thread)
+                    get_chunk_thread.start()
+                    i += 1
+                else:
+                    break
+
+            for thread in running_threads:
+                thread.join()
+
+        recieving_file.write_file()
+        self.available_files[file_name] = completeFile(filename, self.name)
 
 def start_peer(port_no, name):
     p = Peer(port_no, name)
@@ -234,4 +342,4 @@ if __name__ == "__main__":
 
         if inp == "get_files":
             file_name = input("Enter file name : ")
-            p.get_peers_with_file(file_name)
+            p.receive_file(file_name)
