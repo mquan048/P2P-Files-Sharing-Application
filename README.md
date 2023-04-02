@@ -11,7 +11,7 @@ a new peer joins the network he pings the manager and gets the list
 of all active peers in the network.
 
 When a peer needs a file, he/she asks other peers whether they have the
-file. If Multiple peers have the file, chunks of the files are recieved from 
+file. If Multiple peers have the file, chunks of the files are received from 
 each of the peers. After receiving the whole file, peer reassembles 
 the file and saves it.
 
