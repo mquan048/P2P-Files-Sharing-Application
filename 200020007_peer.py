@@ -6,16 +6,16 @@ import os
 
 import logging
 
-
 PEERS_DIR = './Peers/'
-PEER_TIMEOUT = 100
+PEER_TIMEOUT = 2
 
 
 class file:
     chunk_size = 2048
+
     def __init__(self, filename: str, owner: str):
         self.filename = filename
-        self.path = "./Peers/" + owner+"/"+filename
+        self.path = "./Peers/" + owner + "/" + filename
 
 
 class completeFile(file):
@@ -23,25 +23,27 @@ class completeFile(file):
     def __init__(self, filename: str, owner: str):
         super().__init__(filename, owner)
         self.size = self.get_size(self.path)
-        self.n_chunks = ceil(self.size/self.chunk_size)
+        self.n_chunks = ceil(self.size / self.chunk_size)
         self.fp = open(self.path, 'rb')
 
     def get_chunk_no(self, chunk_no):
-        return self._get_chunk(chunk_no*self.chunk_size)
+        return self._get_chunk(chunk_no * self.chunk_size)
 
     def _get_chunk(self, offset):
         self.fp.seek(offset, 0)
         chunk = self.fp.read(self.chunk_size)
         return chunk
 
-    def get_size(self, path):
+    @staticmethod
+    def get_size(path):
         return os.path.getsize(path)
+
 
 class incompleteFile(file):
     def __init__(self, filename, owner, size):
         super().__init__(filename, owner)
         self.size = size
-        self.n_chunks = ceil(self.size/self.chunk_size)
+        self.n_chunks = ceil(self.size / self.chunk_size)
         self.needed_chunks = [i for i in range(self.n_chunks)]
         self.received_chunks = {}
         self.fp = open(self.path, 'wb')
@@ -50,7 +52,7 @@ class incompleteFile(file):
         self.needed_chunks = []
         for i in range(self.n_chunks):
             if i not in self.received_chunks:
-               self.needed_chunks.append(i)
+                self.needed_chunks.append(i)
         return self.needed_chunks
 
     def write_chunk(self, buf, chunk_no):
@@ -71,7 +73,6 @@ class Peer:
     manager_port = 1233
     addr: (str, int)
     available_files: dict[str, completeFile]
-
 
     def __init__(self, port_no: int, name: str, ip_addr='127.0.0.1'):
         self.port = port_no
@@ -142,25 +143,26 @@ class Peer:
         """
 
         self.my_socket.listen(10)
-        while True:
-            c, addr = self.my_socket.accept()
+        try:
+            while True:
+                c, addr = self.my_socket.accept()
 
-            self.peers_connections[addr] = {
-                "connection": c
-            }
-            listen_peers_thread = threading.Thread(target=self.listen_to_peer, args=(c, addr))
-            listen_peers_thread.start()
+                self.peers_connections[addr] = {
+                    "connection": c
+                }
+                listen_peers_thread = threading.Thread(target=self.listen_to_peer, args=(c, addr))
+                listen_peers_thread.start()
+        except OSError as e:
+            print(e.errno)
 
-    def listen_to_peer(self, c: socket.socket, addr: (str, int)):
+    def listen_to_peer(self, c: socket.socket):
         """
-
         Listen to peer and give response when asked.
         """
 
         while True:
             try:
                 msg = pickle.loads(c.recv(2048))
-
 
                 if msg['type'] == 'request_file':
                     req_file_name = msg['data']
@@ -188,11 +190,8 @@ class Peer:
                     })
 
                     c.send(ret_msg)
-            except EOFError: # TODO: don't know what is happening here.
+            except EOFError:  # TODO: don't know what is happening here.
                 pass
-
-
-
 
     def connect_to_peer(self, addr):
         """
@@ -249,7 +248,7 @@ class Peer:
 
         return file_detials
 
-    def get_chunk_from_peer(self, filename, peer_addr, chunk_no, incomp_file:incompleteFile):
+    def get_chunk_from_peer(self, filename, peer_addr, chunk_no, incomp_file: incompleteFile):
         c = self.connect_to_peer(peer_addr)
         msg = pickle.dumps({
             "type": "request_chunk",
@@ -272,11 +271,12 @@ class Peer:
         logging.info(f"received the chunk {chunk_no}")
         c.close()
 
-
-
     def receive_file(self, filename):
         file_details = p.get_peers_with_file(file_name)
         logging.info(f"{file_details}")
+        if file_details['size'] is None:
+            print("File not found")
+            return
         recieving_file = incompleteFile(filename, self.name, int(file_details['size']))
 
         while len(recieving_file.get_needed()) != 0:
@@ -309,7 +309,11 @@ class Peer:
         self.available_files[file_name] = completeFile(filename, self.name)
         print(f"recieved {filename}")
 
+
 def start_peer(port_no, name):
+    """
+    start the peer.
+    """
     p = Peer(port_no, name)
     p.connect_manager()
     receive_thread = threading.Thread(target=p.receive)
@@ -323,30 +327,47 @@ def start_peer(port_no, name):
 if __name__ == "__main__":
     port_no = int(input("Enter Port Number: "))
     name = input("Enter your name: ")
-    logging.basicConfig(filename="logs/"+name+'.log', encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(filename="logs/" + name + '.log', encoding='utf-8', level=logging.DEBUG)
     p = start_peer(port_no, name)
+    connected = 1
     print(f"our available files are: {list(p.available_files.keys())}")
     print("Give one of the commands:")
     print("0|cls: Close the connection with manager")
     print("1|conn: connect to manager")
     print("2|get_peers: update the peers list")
-    print("3|get_files: get files from peers\n\n")
+    print("3|get_files: get files from peers")
+    print("4|sharable_files: get the list of sharable files")
+    print("5|end: End the program\n\n")
 
     while True:
         inp = input(">")
         if inp == 'cls' or inp == '0':
-            p.disconnect()
-            del (p)
+            if connected:
+                p.disconnect()
+                del p
+                connected = 0
+            else:
+                print("peer is not connected!")
 
         if inp == "conn" or inp == '1':
-            start_peer(port_no, name)
+            if not connected:
+                p = start_peer(port_no, name)
+                connected = 1
+            else:
+                print("peer is already connected to manager")
 
         if inp == "get_peers" or inp == '2':
             update_peers_thread = threading.Thread(target=p.update_peers)
             update_peers_thread.start()
             update_peers_thread.join()
-            print("available peers are: p.peers")
+            print(f"available peers are: {p.peers}")
 
         if inp == "get_files" or inp == '3':
             file_name = input("Enter file name : ")
             p.receive_file(file_name)
+
+        if inp == 'sharable_files' or inp == '4':
+            print(f"our available files are: {list(p.available_files.keys())}")
+
+        if inp == 'end' or inp == '5':
+            os._exit(0)
