@@ -3,6 +3,7 @@ import socket
 import threading
 import time
 import pickle
+import os
 
 CONN_TEST_TIME = 1
 
@@ -146,5 +147,12 @@ class Manager:
 
 
 if __name__ == "__main__":
-    manager = Manager()
-    manager.run()
+    try:
+        manager = Manager()
+        manager.run()
+        inp = input()
+        if inp == 'c' or inp == 'close':
+            os._exit(0)
+
+    except KeyboardInterrupt:
+        os._exit(0)

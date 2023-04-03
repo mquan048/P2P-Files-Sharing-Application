@@ -114,6 +114,7 @@ class Peer:
                 if msg != "testing conn":
                     self.peers = msg['peers']
                     logging.info(f"available peers are {self.peers}")
+                    print(f"available peers are {self.peers}")
             except ConnectionAbortedError:
                 print("connection with manager is closed")
                 break
@@ -155,7 +156,7 @@ class Peer:
         except OSError as e:
             print(e.errno)
 
-    def listen_to_peer(self, c: socket.socket):
+    def listen_to_peer(self, c: socket.socket, addr):
         """
         Listen to peer and give response when asked.
         """
@@ -268,7 +269,9 @@ class Peer:
         except socket.timeout:
             print(f"peer {peer_addr} did not send the file")
 
-        logging.info(f"received the chunk {chunk_no}")
+        logging.info(f"received the chunk {chunk_no}/{incomp_file.n_chunks} from {peer_addr}")
+        print(f"received the chunk {chunk_no}/{incomp_file.n_chunks} from {peer_addr}")
+
         c.close()
 
     def receive_file(self, filename):
@@ -325,49 +328,52 @@ def start_peer(port_no, name):
 
 
 if __name__ == "__main__":
-    port_no = int(input("Enter Port Number: "))
-    name = input("Enter your name: ")
-    logging.basicConfig(filename="logs/" + name + '.log', encoding='utf-8', level=logging.DEBUG)
-    p = start_peer(port_no, name)
-    connected = 1
-    print(f"our available files are: {list(p.available_files.keys())}")
-    print("Give one of the commands:")
-    print("0|cls: Close the connection with manager")
-    print("1|conn: connect to manager")
-    print("2|get_peers: update the peers list")
-    print("3|get_files: get files from peers")
-    print("4|sharable_files: get the list of sharable files")
-    print("5|end: End the program\n\n")
+    try:
+        port_no = int(input("Enter Port Number: "))
+        name = input("Enter your name: ")
+        logging.basicConfig(filename="logs/" + name + '.log', encoding='utf-8', level=logging.DEBUG)
+        p = start_peer(port_no, name)
+        connected = 1
+        print(f"our available files are: {list(p.available_files.keys())}")
+        print("Give one of the commands:")
+        print("0|cls: Close the connection with manager")
+        print("1|conn: connect to manager")
+        print("2|get_peers: update the peers list")
+        print("3|get_files: get files from peers")
+        print("4|sharable_files: get the list of sharable files")
+        print("5|end: End the program\n\n")
 
-    while True:
-        inp = input(">")
-        if inp == 'cls' or inp == '0':
-            if connected:
-                p.disconnect()
-                del p
-                connected = 0
-            else:
-                print("peer is not connected!")
+        while True:
+            inp = input(">")
+            if inp == 'cls' or inp == '0':
+                if connected:
+                    p.disconnect()
+                    del p
+                    connected = 0
+                else:
+                    print("peer is not connected!")
 
-        if inp == "conn" or inp == '1':
-            if not connected:
-                p = start_peer(port_no, name)
-                connected = 1
-            else:
-                print("peer is already connected to manager")
+            if inp == "conn" or inp == '1':
+                if not connected:
+                    p = start_peer(port_no, name)
+                    connected = 1
+                else:
+                    print("peer is already connected to manager")
 
-        if inp == "get_peers" or inp == '2':
-            update_peers_thread = threading.Thread(target=p.update_peers)
-            update_peers_thread.start()
-            update_peers_thread.join()
-            print(f"available peers are: {p.peers}")
+            if inp == "get_peers" or inp == '2':
+                update_peers_thread = threading.Thread(target=p.update_peers)
+                update_peers_thread.start()
+                update_peers_thread.join()
+                print(f"available peers are: {p.peers}")
 
-        if inp == "get_files" or inp == '3':
-            file_name = input("Enter file name : ")
-            p.receive_file(file_name)
+            if inp == "get_files" or inp == '3':
+                file_name = input("Enter file name : ")
+                p.receive_file(file_name)
 
-        if inp == 'sharable_files' or inp == '4':
-            print(f"our available files are: {list(p.available_files.keys())}")
+            if inp == 'sharable_files' or inp == '4':
+                print(f"our available files are: {list(p.available_files.keys())}")
 
-        if inp == 'end' or inp == '5':
-            os._exit(0)
+            if inp == 'end' or inp == '5':
+                os._exit(0)
+    except KeyboardInterrupt:
+        os._exit(0)
