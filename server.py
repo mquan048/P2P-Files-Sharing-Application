@@ -1,20 +1,51 @@
 import socket
 import threading
+import json
 
 def recvLogin(client, clientAddress):
     account = {}
-    username = client.recv(BUFSIZE).decode('utf8')
-    client.sendall(bytes(' ', "utf8"))
-    password = client.recv(BUFSIZE).decode('utf8')
-    account['username'] = username
-    account['password'] = password
+    username = client.recv(BUFSIZE).decode()
+    client.send(' '.encode())
+    password = client.recv(BUFSIZE).decode()
+    
+    account[0] = username
+    account[1] = password
+    
     return account
 
-def handleUpload(client, clientAddress):
-    return
+def validClient(username, password):
+    for acc in listClient:
+        if acc[0] == username:
+            return False
+    with open('account.json', 'r') as db:
+        accountList = json.load(db)
+    for acc in accountList:
+        if acc['username'] == username and acc['password'] == str(password):
+            return True
+    return False
 
-def handleDownload(client, clientAddress):
-    return
+def initUpload(client):
+    uploadHost = client.recv(BUFSIZE).decode()
+    client.send(' '.encode())
+    uploadPort = client.recv(BUFSIZE).decode()
+    client.send(' '.encode())
+    
+    fileName = client.recv(BUFSIZE).decode()
+    while fileName != 'END':
+        print(fileName)
+        listFiles.append((fileName, (uploadHost, uploadPort)))
+        client.send(' '.encode())
+        fileName = client.recv(BUFSIZE).decode()
+    print(listFiles)
+    return (uploadHost, uploadPort)
+
+def handleDownload(client):
+    fileName = client.recv(BUFSIZE).decode()
+    for file in listFiles:
+        if file[0] == fileName:
+            client.send(file[1][0].encode())
+            client.send(file[1][1].encode())
+            break
 
 def handleClient(client, clientAddress):
     global listAccount
@@ -22,29 +53,33 @@ def handleClient(client, clientAddress):
     account = {}
     try:
         while True:
-            action = client.recv(BUFSIZE).decode('uft8')
-            if action == 'LOGIN' :
+            action = client.recv(BUFSIZE).decode()
+            print(action)
+            if action == 'LOGIN':
                 account = recvLogin(client, clientAddress)
                 
                 #Validation client
+                while not validClient(account[0], account[1]):
+                    account = {}
+                    client.send('Login fail'.encode())
+                    account = recvLogin(client, clientAddress)
                 
-                listClient.append((account['username'], clientAddress))
-                print(listClient)
+                msg = f"username {account[0]} login successfully"
+                client.sendall(msg.encode())
+                print(msg) 
                 
-                msg = f"username {account['username']} login successfully"
-                client.sendall(msg.encode('utf8'))
-                print(msg)
+                peerAddress = initUpload(client) 
                 
-            elif action == 'UPLOAD':
-                uploadThread = threading.Thread(target=handleClient, args=(client, clientAddress))
+                listClient.append((account[0], clientAddress, peerAddress))
+                print(listClient)          
                 
             elif action == 'DOWNLOAD':
-                downloadThread = threading.Thread(target=handleClient, args=(client, clientAddress))
+                handleDownload(client)
                 
             elif action == 'LOGOUT':
                 # Remove file of client in listFiles
         
-                listClient.remove((account['username'], clientAddress))
+                listClient.remove((account[0], clientAddress))
                 print(listClient)  
             
             elif action == 'QUIT':
@@ -53,9 +88,9 @@ def handleClient(client, clientAddress):
     finally:
         
         # Remove file of client in listFiles
-        
-        listClient.remove((account['username'], clientAddress))
-        print(listClient)  
+        if account != {}:
+            listClient.remove((account[0], clientAddress, peerAddress))
+            print(listClient)  
         
         client.close()    
     return
@@ -80,6 +115,5 @@ if __name__ == '__main__':
             print('%s:%s has connected.' % clientAddress)
             clientThread = threading.Thread(target=handleClient, args=(client, clientAddress))
             clientThread.start()
-            clientThread.join()
     finally:
         server.close()
