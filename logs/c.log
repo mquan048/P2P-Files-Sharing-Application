@@ -1,0 +1,13 @@
+INFO:root:available peers are [('127.0.0.1', 50), ('127.0.0.1', 51), ('127.0.0.1', 52)]
+INFO:root:Connected to Peer ('127.0.0.1', 50)
+INFO:root:Connected to Peer ('127.0.0.1', 51)
+INFO:root:{'size': None, 'peers_with_file': []}
+INFO:root:available peers are [('127.0.0.1', 50), ('127.0.0.1', 51), ('127.0.0.1', 52)]
+INFO:root:Connected to Peer ('127.0.0.1', 50)
+INFO:root:Connected to Peer ('127.0.0.1', 51)
+INFO:root:{'size': '13', 'peers_with_file': [('127.0.0.1', 51), ('127.0.0.1', 50)]}
+INFO:root:available peers are [('127.0.0.1', 50), ('127.0.0.1', 51), ('127.0.0.1', 52)]
+INFO:root:Connected to Peer ('127.0.0.1', 50)
+INFO:root:Connected to Peer ('127.0.0.1', 51)
+INFO:root:Connected to Peer ('127.0.0.1', 50)
+INFO:root:received the chunk 0/1 from ('127.0.0.1', 50)
