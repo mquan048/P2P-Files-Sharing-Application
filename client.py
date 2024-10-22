@@ -29,7 +29,7 @@ def login(server):
         if msg != 'Login fail':
             check = True
 
-def getListFile(server, uploadServer):
+def sendListFile(server, uploadServer):
     uploadServerHost, uploadServerPort = uploadServer.getsockname()
     
     send(server, uploadServerHost)
@@ -56,17 +56,16 @@ def runUploadServer():
             peerThread = threading.Thread(target=handleUpload, args=(peer,))
             peerThread.start()
              
-    finally:
-        print('Server close')
-        uploadServer.close()
+    except:
+        print('Upload server close')
 
 def handleUpload(peer):
     fileName = receive(peer)
     orderUpload = int(receive(peer))
     totalUploader = int(receive(peer))
     
-    file = open(f'{Path(__file__).parent}\\files\\{fileName}', 'rb')
-    fileSize = os.path.getsize(f'{Path(__file__).parent}\\files\\{fileName}')
+    file = open(f'{Path(__file__).parent}/files/{fileName}', 'rb')
+    fileSize = os.path.getsize(f'{Path(__file__).parent}/files/{fileName}')
     data = file.read()
     
     startRead = (fileSize // totalUploader) * orderUpload
@@ -91,13 +90,13 @@ def handleDownload(fileName, listUploadServer, totalUploader):
     for thread in listThread:
         thread.join()
     
-    file = open(f'{Path(__file__).parent}\\files\\{fileName}', 'wb')
+    file = open(f'{Path(__file__).parent}/files/{fileName}', 'wb')
     
     for data in listData:
         file.write(data)
     
     file.close()
-
+    
 def handleDownloadThread(fileName, orderUpload, totalUploader, uploadAddress, listData):
     uploadServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print(f'Connecting to upload server {uploadAddress[0]}:{uploadAddress[1]}')
@@ -136,7 +135,7 @@ if __name__ == '__main__':
             login(server)
             uploadServerThread = threading.Thread(target=runUploadServer)
             uploadServerThread.start()
-            getListFile(server, uploadServer)
+            sendListFile(server, uploadServer)
             
             while True: 
                 action = input()
@@ -166,7 +165,8 @@ if __name__ == '__main__':
                     msg = receive(server)
                     print(msg)
                     checkQuit = True
-                    break
-            
+                    break  
+                
     finally:
+        uploadServer.close()
         server.close()

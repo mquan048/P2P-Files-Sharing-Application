@@ -1,6 +1,7 @@
 import socket
 import threading
 import json
+from pathlib import Path
 
 def send(socket, message):
     socket.send(message.encode())
@@ -17,7 +18,7 @@ def validClient(username, password):
     for acc in listClients:
         if acc[0] == username:
             return False
-    with open('account.json', 'r') as db:
+    with open(f'{Path(__file__).parent}/account.json', 'r') as db:
         accountList = json.load(db)
     for acc in accountList:
         if acc['username'] == username and acc['password'] == str(password):
@@ -98,8 +99,6 @@ def handleClient(client, clientAddress):
                     logout(account)
                     account = None
                     send(client, "Logout successfully")
-                    print(listClients)
-                    print(listFiles)
                     break
                 
                 elif action == "QUIT":
@@ -108,12 +107,12 @@ def handleClient(client, clientAddress):
                     send(client, "Logout successfully")
                     checkQuit = True
                     break
-
-    finally:
+    except:
         if not account is None:
             logout(account)
+    finally:
+        print(f"Close connection with {client.getpeername()}")
         client.close()    
-    return
 
 HOST = '127.0.0.1'  
 PORT = 8000        
