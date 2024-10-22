@@ -158,9 +158,13 @@ if __name__ == '__main__':
                     downloadThread.start()
                     
                 elif action == "LOGOUT":
+                    msg = receive(server)
+                    print(msg)
                     break
                 
                 elif action == "QUIT":
+                    msg = receive(server)
+                    print(msg)
                     checkQuit = True
                     break
             

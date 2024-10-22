@@ -39,10 +39,11 @@ def login(client):
             send(client, "Login fail")  
 
 def logout(account):
+    accRemove = None
     for acc in listClients:
         if acc[0] == account:
             accRemove = acc
-    for file in listFiles:
+    for file in listFiles.copy():
         if file[1] == accRemove[2]:
             listFiles.remove(file)
     listClients.remove(accRemove)    
@@ -97,6 +98,8 @@ def handleClient(client, clientAddress):
                     logout(account)
                     account = None
                     send(client, "Logout successfully")
+                    print(listClients)
+                    print(listFiles)
                     break
                 
                 elif action == "QUIT":
@@ -107,7 +110,7 @@ def handleClient(client, clientAddress):
                     break
 
     finally:
-        if account is None:
+        if not account is None:
             logout(account)
         client.close()    
     return
