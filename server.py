@@ -2,19 +2,19 @@ import socket
 import threading
 import json
 
-def recvLogin(client, clientAddress):
-    account = {}
-    username = client.recv(BUFSIZE).decode()
-    client.send(' '.encode())
-    password = client.recv(BUFSIZE).decode()
-    
-    account[0] = username
-    account[1] = password
-    
-    return account
+def send(socket, message):
+    socket.send(message.encode())
+    check = socket.recv(BUFSIZE).decode()
+    if check != "OK":
+        raise Exception('Have error when send message')
+        
+def receive(socket):
+    message = socket.recv(BUFSIZE).decode()
+    socket.send("OK".encode())
+    return message
 
 def validClient(username, password):
-    for acc in listClient:
+    for acc in listClients:
         if acc[0] == username:
             return False
     with open('account.json', 'r') as db:
@@ -24,74 +24,91 @@ def validClient(username, password):
             return True
     return False
 
-def initUpload(client):
-    uploadHost = client.recv(BUFSIZE).decode()
-    client.send(' '.encode())
-    uploadPort = client.recv(BUFSIZE).decode()
-    client.send(' '.encode())
+def login(client):
+    while True:
+        username = receive(client)
+        password = receive(client)
+        
+        if validClient(username, password):
+            msg = f"username {username} login successfully"
+            send(client, msg)
+            print(msg)
+            
+            return username
+        else:
+            send(client, "Login fail")  
+
+def logout(account):
+    for acc in listClients:
+        if acc[0] == account:
+            accRemove = acc
+    for file in listFiles:
+        if file[1] == accRemove[2]:
+            listFiles.remove(file)
+    listClients.remove(accRemove)    
     
-    fileName = client.recv(BUFSIZE).decode()
-    while fileName != 'END':
-        print(fileName)
+def updateListFiles(client):
+    uploadHost = receive(client)
+    uploadPort = receive(client)
+    
+    while True:
+        fileName = receive(client)
+        if fileName == "<END>":
+            break
         listFiles.append((fileName, (uploadHost, uploadPort)))
-        client.send(' '.encode())
-        fileName = client.recv(BUFSIZE).decode()
+        
     print(listFiles)
     return (uploadHost, uploadPort)
 
 def handleDownload(client):
-    fileName = client.recv(BUFSIZE).decode()
+    fileName = receive(client)
+    listPeer = []
     for file in listFiles:
         if file[0] == fileName:
-            client.send(file[1][0].encode())
-            client.send(file[1][1].encode())
-            break
+            listPeer.append((file[1][0], file[1][1]))
+            
+    # send number of peer have this file
+    send(client, str(len(listPeer)))
+    
+    for peer in listPeer:
+        send(client, peer[0])
+        send(client, peer[1])
 
 def handleClient(client, clientAddress):
     global listAccount
     global listAddress
-    account = {}
     try:
-        while True:
-            action = client.recv(BUFSIZE).decode()
-            print(action)
-            if action == 'LOGIN':
-                account = recvLogin(client, clientAddress)
-                
-                #Validation client
-                while not validClient(account[0], account[1]):
-                    account = {}
-                    client.send('Login fail'.encode())
-                    account = recvLogin(client, clientAddress)
-                
-                msg = f"username {account[0]} login successfully"
-                client.sendall(msg.encode())
-                print(msg) 
-                
-                peerAddress = initUpload(client) 
-                
-                listClient.append((account[0], clientAddress, peerAddress))
-                print(listClient)          
-                
-            elif action == 'DOWNLOAD':
-                handleDownload(client)
-                
-            elif action == 'LOGOUT':
-                # Remove file of client in listFiles
-        
-                listClient.remove((account[0], clientAddress))
-                print(listClient)  
+        checkQuit = False
+        account = None
+        while not checkQuit:
+            account = login(client)
+            uploadAddress = updateListFiles(client)
+            listClients.append((account, clientAddress, uploadAddress))
+            print(listClients)
             
-            elif action == 'QUIT':
-                break
-            
+            while True:
+                action = receive(client)
+                print(f"{clientAddress[0]}:{clientAddress[1]}: {action}")
+                
+                if action == "DOWNLOAD":
+                    handleDownload(client)
+                    
+                elif action == "LOGOUT":
+                    logout(account)
+                    account = None
+                    send(client, "Logout successfully")
+                    break
+                
+                elif action == "QUIT":
+                    logout(account)
+                    account = None
+                    send(client, "Logout successfully")
+                    checkQuit = True
+                    break
+
     finally:
-        
-        # Remove file of client in listFiles
-        if account != {}:
-            listClient.remove((account[0], clientAddress, peerAddress))
-            print(listClient)  
-        
+        if account is None:
+            logout(account)
         client.close()    
     return
 
@@ -99,7 +116,7 @@ HOST = '127.0.0.1'
 PORT = 8000        
 BUFSIZE = 1024
 
-listClient = []
+listClients = []
 listFiles = []
 
 
