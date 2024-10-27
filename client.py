@@ -309,7 +309,7 @@ class Fetch_File:
                 data = response["payload"]["data"]
                 self.chunk_data[chunk_no] = data
                 
-                progress.update(BUFSIZE)
+                progress.update(self.chunk_size)
                 
             else:
                 resquest = {
