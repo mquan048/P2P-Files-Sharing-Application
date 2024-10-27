@@ -256,15 +256,15 @@ class DashboardFrame(ctk.CTkFrame):
 
     def downloadFile(self,filename):
         self.app.downloadFile(filename)
-        self.current_frame=""
-        self.shared_file_frame.pack_forget()
-        self.showSharedFiles()
+        # self.current_frame=""
+        # self.shared_file_frame.pack_forget()
+        # self.showSharedFiles()
 
     def shareFile(self,filename):
         self.app.shareFile(filename)
-        self.current_frame=""
-        self.my_file_frame.pack_forget()
-        self.showMyFiles()
+        # self.current_frame=""
+        # self.my_file_frame.pack_forget()
+        # self.showMyFiles()
 
 def initWindow(APP_NAME, WIDTH, HEIGHT,SHARE_DIR,LOCAL_DIR):
     root=ctk.CTk()
