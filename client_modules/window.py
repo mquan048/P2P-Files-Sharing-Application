@@ -1,6 +1,7 @@
 import customtkinter  as ctk
 from PIL import Image
 from socket import *
+import os
 
 
 class App():
@@ -11,7 +12,7 @@ class App():
         self.share_dir = share_dir
         self.local_dir = local_dir
         self.login_screen = LoginFrame(self, self.mainframe, self.width, self.height)
-        self.dashboard_screen = DashboardFrame(self, self.mainframe, self.width, self.height, self.share_dir, self.local_dir)
+        self.dashboard_screen = DashboardFrame(self, self.mainframe, self.width, self.height)
         self.login_screen.show()
         self.mainframe.pack(fill="both", expand=True)
 
@@ -25,12 +26,50 @@ class App():
 
     def login(self,username,password):
         print(f"Username: {username}, Password: {password}")
-        # If user authenticated -> change to login frame
+        # TODO: If user authenticated -> change to login frame
         self.changeDashboardFrame()
 
     def logout(self):
-        # Logout logic
+        # TODO: Logout logic
         self.changeLoginFrame()
+
+    def downloadFile(self,filename):
+        # TODO: Download file logic
+        pass
+
+    def shareFile(self,filename):
+        # TODO: Share file logic
+        pass
+
+    def getSharedFiles(self):
+        files_metadata = []
+        for filename in os.listdir(self.share_dir):
+            if filename == '.gitkeep':
+                continue
+            file_path = os.path.join(self.share_dir, filename)
+            if os.path.isfile(file_path):
+                file_stat = os.stat(file_path)
+                metadata = {
+                    'filename': filename,
+                    'size': file_stat.st_size
+                }
+                files_metadata.append(metadata)
+        return files_metadata
+
+    def getMyFiles(self):
+        files_metadata = []
+        for filename in os.listdir(self.local_dir):
+            if filename == '.gitkeep':
+                continue
+            file_path = os.path.join(self.local_dir, filename)
+            if os.path.isfile(file_path):
+                file_stat = os.stat(file_path)
+                metadata = {
+                    'filename': filename,
+                    'size': file_stat.st_size
+                }
+                files_metadata.append(metadata)
+        return files_metadata
 
 class LoginFrame(ctk.CTkFrame):
     def __init__(self, app, master, width, height):
@@ -81,14 +120,12 @@ class LoginFrame(ctk.CTkFrame):
         self.main_frame.pack_forget()
 
 class DashboardFrame(ctk.CTkFrame):
-    def __init__(self, app, master, width, height,share_dir,local_dir):
+    def __init__(self, app, master, width, height):
         super().__init__(master)
         self.app = app
         self.master = master
         self.width = width
         self.height = height
-        self.share_dir = share_dir
-        self.local_dir = local_dir
         self.main_frame = ctk.CTkFrame(master)
 
     def show(self):
@@ -102,16 +139,17 @@ class DashboardFrame(ctk.CTkFrame):
         self.right_frame=ctk.CTkFrame(self.main_frame,width=self.width-150,height=self.height,fg_color="white",corner_radius=0)
         self.right_frame.pack_propagate(0)
         # Menu items
-        share_button = ctk.CTkButton(left_frame,text="Shared files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showSharedFiles(self.right_frame))
+        share_button = ctk.CTkButton(left_frame,text="Shared files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showSharedFiles())
         share_button.pack(pady=(20,15))
-        local_button = ctk.CTkButton(left_frame,text="My files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showMyFiles(self.right_frame))
+        local_button = ctk.CTkButton(left_frame,text="My files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showMyFiles())
         local_button.pack(pady=(15,20))
         logout_button = ctk.CTkButton(left_frame,text="Logout",font=("Arial", 20),fg_color="white",text_color="red",corner_radius=0,width=150,hover_color="white",command=self.app.logout)
         logout_button.pack(pady=(self.height-175,0))
         # Create 2 main frames
-        self.showSharedFiles(self.right_frame,True)
-        self.showMyFiles(self.right_frame,True)
+        self.showSharedFiles(False)
+        self.showMyFiles(False)
         self.my_file_frame.pack_forget()
+        self.current_frame = "shared_files"
         # Pack
         left_frame.pack(side="left",fill="both", expand=True)
         self.right_frame.pack(side="right",fill="both", expand=True)
@@ -120,59 +158,113 @@ class DashboardFrame(ctk.CTkFrame):
     def hide(self):
         self.main_frame.pack_forget()
 
-    def showSharedFiles(self,master,first_time=False):
-        self.shared_file_frame=ctk.CTkFrame(master,width=self.width-150,height=self.height,fg_color="white")
+    def showSharedFiles(self,removeOtherFrame=True):
+        if hasattr(self, 'current_frame') and self.current_frame == "shared_files":
+            return
+        self.current_frame = "shared_files"
+        self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
         label=ctk.CTkLabel(self.shared_file_frame,text="Shared files",font=("Arial", 30))
         label.pack(pady=(20,50))
         # Header frame
         header_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-150,height=50,fg_color="white")
         header_frame.pack_propagate(0)
-        file_name_label=ctk.CTkLabel(header_frame,text="File name",font=("Arial", 16),width=300)
+        file_name_label=ctk.CTkLabel(header_frame,text="File name",font=("Arial", 16),width=int((self.width-200)*0.4))
         file_name_label.pack(side="left")
-        file_size_label=ctk.CTkLabel(header_frame,text="File size",font=("Arial", 16),width=100)
-        file_size_label.pack(padx=(250,300),side="left")
-        action_label=ctk.CTkLabel(header_frame,text="Action",font=("Arial", 16),width=100)
-        action_label.pack(padx=(0,100),side="left")
+        file_size_label=ctk.CTkLabel(header_frame,text="File size",font=("Arial", 16),width=int((self.width-200)*0.4))
+        file_size_label.pack(side="left")
+        action_label=ctk.CTkLabel(header_frame,text="Action",font=("Arial", 16),width=int((self.width-200)*0.2))
+        action_label.pack(side="left")
         header_frame.pack()
         # Horizontal line
         horizontal_line=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
         # File list
-
+        files=self.app.getSharedFiles()
+        # Create a row for each file
+        for file in files:
+            row_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-150,height=50,fg_color="white")
+            row_frame.pack_propagate(0)
+            file_name_label=ctk.CTkLabel(row_frame,text=file['filename'],font=("Arial", 16),width=int((self.width-200)*0.4))
+            file_name_label.pack(side="left")
+            fileSize = str(file['size'])
+            if file['size'] == 1 or file['size'] == 0:
+                fileSize += " byte"
+            else:
+                fileSize += " bytes"
+            file_size_label=ctk.CTkLabel(row_frame,text=fileSize,font=("Arial", 16),width=int((self.width-200)*0.4))
+            file_size_label.pack(side="left")
+            download_button=ctk.CTkButton(row_frame,text="Download",font=("Arial", 16),fg_color="#00A2FF",text_color="white",corner_radius=5,width=int((self.width-200)*0.2),command=lambda: self.downloadFile(file['filename']))
+            download_button.pack(side="left")
+            row_frame.pack()
+            # Horizontal line
+            horizontal_line=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
+            horizontal_line.pack()
         # Pack
         self.shared_file_frame.pack(fill="both", expand=True)
-
         # Remove my files frame
-        if hasattr(self, 'my_file_frame') and not first_time:
+        if removeOtherFrame:
             self.my_file_frame.pack_forget()
 
-    def showMyFiles(self,master,first_time=False):
-        self.my_file_frame=ctk.CTkFrame(master,width=self.width-150,height=self.height,fg_color="white")
+    def showMyFiles(self,removeOtherFrame=True):
+        if hasattr(self, 'current_frame') and self.current_frame == "my_files":
+            return
+        self.current_frame = "my_files"
+        self.my_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
         label=ctk.CTkLabel(self.my_file_frame,text="My files",font=("Arial", 30))
         label.pack(pady=(20,50))
         # Header frame
         header_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-150,height=50,fg_color="white")
         header_frame.pack_propagate(0)
-        file_name_label=ctk.CTkLabel(header_frame,text="File name",font=("Arial", 16),width=300)
+        file_name_label=ctk.CTkLabel(header_frame,text="File name",font=("Arial", 16),width=int((self.width-200)*0.4))
         file_name_label.pack(side="left")
-        file_size_label=ctk.CTkLabel(header_frame,text="File size",font=("Arial", 16),width=100)
-        file_size_label.pack(padx=(250,300),side="left")
-        action_label=ctk.CTkLabel(header_frame,text="Action",font=("Arial", 16),width=100)
-        action_label.pack(padx=(0,100),side="left")
+        file_size_label=ctk.CTkLabel(header_frame,text="File size",font=("Arial", 16),width=int((self.width-200)*0.4))
+        file_size_label.pack(side="left")
+        action_label=ctk.CTkLabel(header_frame,text="Action",font=("Arial", 16),width=int((self.width-200)*0.2))
+        action_label.pack(side="left")
         header_frame.pack()
         # Horizontal line
         horizontal_line=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
         # File list
-
+        files=self.app.getMyFiles()
+        # Create a row for each file
+        for file in files:
+            row_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-150,height=50,fg_color="white")
+            row_frame.pack_propagate(0)
+            file_name_label=ctk.CTkLabel(row_frame,text=file['filename'],font=("Arial", 16),width=int((self.width-200)*0.4))
+            file_name_label.pack(side="left")
+            fileSize = str(file['size'])
+            if file['size'] == 1 or file['size'] == 0:
+                fileSize += " byte"
+            else:
+                fileSize += " bytes"
+            file_size_label=ctk.CTkLabel(row_frame,text=fileSize,font=("Arial", 16),width=int((self.width-200)*0.4))
+            file_size_label.pack(side="left")
+            upload_button=ctk.CTkButton(row_frame,text="Share",font=("Arial", 16),fg_color="#00A2FF",text_color="white",corner_radius=5,width=int((self.width-200)*0.2),command=lambda: self.shareFile(file['filename']))
+            upload_button.pack(side="left")
+            row_frame.pack()
+            # Horizontal line
+            horizontal_line=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
+            horizontal_line.pack()
         # Pack
         self.my_file_frame.pack(fill="both", expand=True)
-
         # Remove shared files frame
-        if hasattr(self, 'shared_file_frame') and not first_time:
+        if removeOtherFrame:
             self.shared_file_frame.pack_forget()
+
+    def downloadFile(self,filename):
+        self.app.downloadFile(filename)
+        self.current_frame=""
+        self.shared_file_frame.pack_forget()
+        self.showSharedFiles()
+
+    def shareFile(self,filename):
+        self.app.shareFile(filename)
+        self.current_frame=""
+        self.my_file_frame.pack_forget()
+        self.showMyFiles()
 
 def initWindow(APP_NAME, WIDTH, HEIGHT,SHARE_DIR,LOCAL_DIR):
     root=ctk.CTk()
