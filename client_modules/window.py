@@ -183,11 +183,13 @@ class DashboardFrame(ctk.CTkFrame):
         # Horizontal line
         horizontal_line=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
+        # Scrollable frame
+        scroll_frame=ctk.CTkScrollableFrame(self.shared_file_frame,width=self.width-150,height=self.height-160,fg_color="white",scrollbar_button_color="white")
         # File list
         files=self.app.getSharedFiles()
         # Create a row for each file
         for file in files:
-            row_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-150,height=50,fg_color="white")
+            row_frame=ctk.CTkFrame(scroll_frame,width=self.width-150,height=50,fg_color="white")
             row_frame.pack_propagate(0)
             file_name_label=ctk.CTkLabel(row_frame,text=file['filename'],font=("Arial", 16),width=int((self.width-200)*0.4))
             file_name_label.pack(side="left")
@@ -202,9 +204,10 @@ class DashboardFrame(ctk.CTkFrame):
             download_button.pack(side="left")
             row_frame.pack()
             # Horizontal line
-            horizontal_line=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
+            horizontal_line=ctk.CTkFrame(scroll_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
             horizontal_line.pack()
         # Pack
+        scroll_frame.pack(fill="both", expand=True)
         self.shared_file_frame.pack(fill="both", expand=True)
         # Remove my files frame
         if removeOtherFrame:
@@ -231,11 +234,13 @@ class DashboardFrame(ctk.CTkFrame):
         # Horizontal line
         horizontal_line=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
+        # Scrollable frame
+        scroll_frame=ctk.CTkScrollableFrame(self.my_file_frame,width=self.width-150,height=self.height-160,fg_color="white",scrollbar_button_color="white")
         # File list
         files=self.app.getMyFiles()
         # Create a row for each file
         for file in files:
-            row_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-150,height=50,fg_color="white")
+            row_frame=ctk.CTkFrame(scroll_frame,width=self.width-150,height=50,fg_color="white")
             row_frame.pack_propagate(0)
             file_name_label=ctk.CTkLabel(row_frame,text=file['filename'],font=("Arial", 16),width=int((self.width-200)*0.4))
             file_name_label.pack(side="left")
@@ -250,9 +255,10 @@ class DashboardFrame(ctk.CTkFrame):
             upload_button.pack(side="left")
             row_frame.pack()
             # Horizontal line
-            horizontal_line=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
+            horizontal_line=ctk.CTkFrame(scroll_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
             horizontal_line.pack()
         # Pack
+        scroll_frame.pack(fill="both", expand=True)
         self.my_file_frame.pack(fill="both", expand=True)
         # Remove shared files frame
         if removeOtherFrame:
