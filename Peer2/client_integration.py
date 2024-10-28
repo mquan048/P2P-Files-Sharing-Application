@@ -12,7 +12,7 @@ from tkinter import filedialog
 from tkinter import filedialog, messagebox
 
 
-CLIENT_PORT_RECIEVE = 50
+CLIENT_PORT_RECIEVE = 52
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 8000
 BUFSIZE = 1024
@@ -373,8 +373,8 @@ def main_account_screen(server: Server, peer: Peer):
     main_screen.geometry("500x500+500+100")
     main_screen.title("App Sharing File")
     Label(
-        text="Select Your Choice",
-        bg="red",
+        text="App Bitorrent 📡😎💌",
+        bg="yellow",
         width="300",
         height="2",
         font=("Calibri", 13),
@@ -406,8 +406,8 @@ def User(server: Server, peer: Peer):
     user_screen.title("User")
     Label(
         user_screen,
-        text="Welcom to my app",
-        bg="red",
+        text=f"Welcom to my app {server.user} 🎉🎉",
+        bg="yellow",
         width="300",
         height="2",
         font=("Calibri", 13),
@@ -494,7 +494,7 @@ def receive_file(server: Server, peer: Peer):
         if (File_name, Bytes) not in peer.available_files:
             print(f"Error: {File_name} is not available.")
             messagebox.showinfo(
-                "Fail", f"Your {File_name} or Size {Bytes} is not availbale"
+                "Fail", f"Your {File_name} or Size {Bytes} bytes is not availbale"
             )
         else:
             file = Fetch_File(File_name, Bytes, peer.available_files)
@@ -545,26 +545,30 @@ def list_files(server: Server, peer: Peer):
 
     index = 0
 
-    for (filename, size), peers in Avai_files.items():
-        # Create a beautiful label
-        label = Label(
-            label_frame,
-            text=f"{filename} ** Size:{size} bytes",
-            font=("Helvetica", 12, "bold"),
-            bg="lightblue",
-            fg="darkblue",
-            padx=10,
-            pady=5,
-            borderwidth=2,
-            relief="groove",
-        )
-        # Use grid to arrange labels in two columns
-        column = index % 2  # 0 for the first column, 1 for the second column
-        row = index // 2  # Increment the row after every two items
-        label.grid(
-            row=row, column=column, padx=5, pady=5, sticky="w"
-        )  # Sticky 'w' for left alignment
-        index += 1
+    if Avai_files == {}:
+        Label(label_frame, text="None file have shared !!!").pack()
+
+    else:
+        for (filename, size), peers in Avai_files.items():
+            # Create a beautiful label
+            label = Label(
+                label_frame,
+                text=f"{filename} ** Size:{size} bytes",
+                font=("Helvetica", 12, "bold"),
+                bg="lightblue",
+                fg="darkblue",
+                padx=10,
+                pady=5,
+                borderwidth=2,
+                relief="groove",
+            )
+            # Use grid to arrange labels in two columns
+            column = index % 2  # 0 for the first column, 1 for the second column
+            row = index // 2  # Increment the row after every two items
+            label.grid(
+                row=row, column=column, padx=5, pady=5, sticky="w"
+            )  # Sticky 'w' for left alignment
+            index += 1
 
     def update_scrollregion(event):
         canvas.configure(scrollregion=canvas.bbox("all"))
@@ -721,7 +725,7 @@ if __name__ == "__main__":
         #             size = int(input("size: "))
 
         #             # Check if the filename is in the available files
-        #             if filename not in peer.available_files:
+        #             if (filename, size) not in peer.available_files:
         #                 print(f"Error: {filename} is not available.")
         #             else:
         #                 file = Fetch_File(filename, size, peer.available_files)
