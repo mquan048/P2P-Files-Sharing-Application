@@ -16,9 +16,9 @@ Sharing file P2P and Using Server connect
 ## Công Nghệ Sử Dụng
 
 - Ngôn ngữ lập trình: Python
-- Thư viện/Framework: os, pickle, socket, tkinter
+- Thư viện/Framework: os, pickle, socket, tkinter,...
 
 ## Cài đặt 
-- Running file server
-- Running file client in every Peer
+- Running file server.py
+- Running file client_integrate.py in every Peer
 - Happing coding <3
