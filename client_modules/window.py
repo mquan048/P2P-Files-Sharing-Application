@@ -1,4 +1,5 @@
 import customtkinter  as ctk
+import tkinter as tk
 from PIL import Image
 from socket import *
 import os
@@ -35,11 +36,11 @@ class App():
 
     def downloadFile(self,filename):
         # TODO: Download file logic
-        pass
+        self.showMessageBox('Success','File downloaded successfully!')
 
     def shareFile(self,filename):
         # TODO: Share file logic
-        pass
+        self.showMessageBox('Success','File shared successfully!')
 
     def getSharedFiles(self):
         files_metadata = []
@@ -70,6 +71,9 @@ class App():
                 }
                 files_metadata.append(metadata)
         return files_metadata
+
+    def showMessageBox(self,title,message):
+        messageBox=tk.messagebox.showinfo(title,message)
 
 class LoginFrame(ctk.CTkFrame):
     def __init__(self, app, master, width, height):
