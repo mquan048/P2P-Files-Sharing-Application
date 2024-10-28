@@ -4,17 +4,20 @@ import json
 import os
 import pickle
 from pathlib import Path
+from dotenv import load_dotenv
 
-HOST = '127.0.0.1'  
-PORT = 8000        
-BUFSIZE = 1024
+load_dotenv()
+
+SERVER_HOST = os.getenv('SERVER_HOST')
+SERVER_PORT = int(os.getenv('SERVER_PORT'))
+BUFFE_SIZE  = int(os.getenv('BUFFE_SIZE'))
 
 class Server:
     server: socket.socket
     connections: dict[str, tuple[socket.socket, (str, int)]]  # dict[username, (socket, peer_addr)]
     
     def __init__(self):
-        self.addr = (HOST, PORT)
+        self.addr = (SERVER_HOST, SERVER_PORT)
         self.connections = dict[str, tuple[socket.socket, tuple[str, int]]]()
         
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,7 +43,7 @@ class Server:
     def recv_req(self, client: socket.socket):
         while True:
             try:
-                request = pickle.loads(client.recv(BUFSIZE))
+                request = pickle.loads(client.recv(BUFFE_SIZE))
                 if request["action"] == "login":
                     self.login(request["payload"], client)
                     
@@ -54,13 +57,13 @@ class Server:
                     client.close()
             except:
                 self.handle_suddenly_exit(client)
+                print(f"{client.getpeername()[0]}:{client.getpeername()[1]} has disconnected")
                 client.close()
                 break
     
     def login(self, payload, client: socket.socket):
         username = payload["username"]
         password = payload["password"]
-
         response = {
             "type": "respone",
             "action": "login",

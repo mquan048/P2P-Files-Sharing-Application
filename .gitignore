@@ -162,3 +162,14 @@ cython_debug/
 #.idea/
 
 .vscode
+
+.env
+client_modules/**/__pycache__/
+
+
+local
+!local/.gitkeep
+
+share
+!share/.gitkeep
+
