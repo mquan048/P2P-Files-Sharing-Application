@@ -49,6 +49,7 @@ class App():
         with open(filePath, 'rb') as file:
             with open(new_file_path, 'wb') as new_file:
                 new_file.write(file.read())
+        self.refreshMyFrame()
         self.showMessageBox('Success','File uploaded successfully!')
 
     def uploadShareFile(self,filePath):
@@ -59,7 +60,16 @@ class App():
             with open(new_file_path, 'wb') as new_file:
                 new_file.write(file.read())
         # TODO: Notice the server that a new file has been uploaded
+        self.refreshShareFrame()
         self.showMessageBox('Success','File uploaded successfully!')
+
+    def refreshShareFrame(self):
+        self.dashboard_screen.showMyFiles()
+        self.dashboard_screen.showSharedFiles()
+
+    def refreshMyFrame(self):
+        self.dashboard_screen.showSharedFiles()
+        self.dashboard_screen.showMyFiles()
 
     def getSharedFiles(self):
         files_metadata = []
@@ -237,7 +247,7 @@ class DashboardFrame(ctk.CTkFrame):
         scroll_frame.pack(fill="both", expand=True)
         self.shared_file_frame.pack(fill="both", expand=True)
         # Remove my files frame
-        if removeOtherFrame:
+        if removeOtherFrame and hasattr(self, 'my_file_frame'):
             self.my_file_frame.pack_forget()
 
     def showMyFiles(self,removeOtherFrame=True):
@@ -296,7 +306,7 @@ class DashboardFrame(ctk.CTkFrame):
         scroll_frame.pack(fill="both", expand=True)
         self.my_file_frame.pack(fill="both", expand=True)
         # Remove shared files frame
-        if removeOtherFrame:
+        if removeOtherFrame and hasattr(self, 'shared_file_frame'):
             self.shared_file_frame.pack_forget()
 
     def downloadFile(self,filename):
@@ -313,6 +323,8 @@ class DashboardFrame(ctk.CTkFrame):
 
     def uploadFile(self,flag):
         filePath=ctk.filedialog.askopenfilename()
+        if filePath == "":
+            return
         self.app.uploadShareFile(filePath) if flag == 1 else self.app.uploadMyFile(filePath)
 
 def initWindow(APP_NAME, WIDTH, HEIGHT,SHARE_DIR,LOCAL_DIR):
