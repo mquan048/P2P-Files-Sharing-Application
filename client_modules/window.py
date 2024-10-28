@@ -42,6 +42,25 @@ class App():
         # TODO: Share file logic
         self.showMessageBox('Success','File shared successfully!')
 
+    def uploadMyFile(self,filePath):
+        # Copy filePath to self.local_dir
+        file_name = os.path.basename(filePath)
+        new_file_path = os.path.join(self.local_dir, file_name)
+        with open(filePath, 'rb') as file:
+            with open(new_file_path, 'wb') as new_file:
+                new_file.write(file.read())
+        self.showMessageBox('Success','File uploaded successfully!')
+
+    def uploadShareFile(self,filePath):
+        # Copy filePath to self.share_dir
+        file_name = os.path.basename(filePath)
+        new_file_path = os.path.join(self.share_dir, file_name)
+        with open(filePath, 'rb') as file:
+            with open(new_file_path, 'wb') as new_file:
+                new_file.write(file.read())
+        # TODO: Notice the server that a new file has been uploaded
+        self.showMessageBox('Success','File uploaded successfully!')
+
     def getSharedFiles(self):
         files_metadata = []
         for filename in os.listdir(self.share_dir):
@@ -169,7 +188,15 @@ class DashboardFrame(ctk.CTkFrame):
         self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
         label=ctk.CTkLabel(self.shared_file_frame,text="Shared files",font=("Arial", 30))
-        label.pack(pady=(20,50))
+        label.pack(pady=20)
+        # File upload button
+        upload_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
+        upload_frame.pack_propagate(0)
+        upload_label=ctk.CTkLabel(upload_frame,text="Upload file:",font=("Arial", 18))
+        upload_label.pack(side="left",padx=(0,20))
+        upload_button=ctk.CTkButton(upload_frame,text="Choose",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=lambda: self.uploadFile(1),hover_color="#6C6C6C")
+        upload_button.pack(side="left")
+        upload_frame.pack()
         # Header frame
         header_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-150,height=50,fg_color="white")
         header_frame.pack_propagate(0)
@@ -184,7 +211,7 @@ class DashboardFrame(ctk.CTkFrame):
         horizontal_line=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
         # Scrollable frame
-        scroll_frame=ctk.CTkScrollableFrame(self.shared_file_frame,width=self.width-150,height=self.height-160,fg_color="white",scrollbar_button_color="white")
+        scroll_frame=ctk.CTkScrollableFrame(self.shared_file_frame,width=self.width-150,fg_color="white",scrollbar_button_color="white")
         # File list
         files=self.app.getSharedFiles()
         # Create a row for each file
@@ -220,7 +247,15 @@ class DashboardFrame(ctk.CTkFrame):
         self.my_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
         label=ctk.CTkLabel(self.my_file_frame,text="My files",font=("Arial", 30))
-        label.pack(pady=(20,50))
+        label.pack(pady=20)
+        # File upload button
+        upload_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
+        upload_frame.pack_propagate(0)
+        upload_label=ctk.CTkLabel(upload_frame,text="Upload file:",font=("Arial", 18))
+        upload_label.pack(side="left",padx=(0,20))
+        upload_button=ctk.CTkButton(upload_frame,text="Choose",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=lambda: self.uploadFile(2),hover_color="#6C6C6C")
+        upload_button.pack(side="left")
+        upload_frame.pack()
         # Header frame
         header_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-150,height=50,fg_color="white")
         header_frame.pack_propagate(0)
@@ -235,7 +270,7 @@ class DashboardFrame(ctk.CTkFrame):
         horizontal_line=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
         # Scrollable frame
-        scroll_frame=ctk.CTkScrollableFrame(self.my_file_frame,width=self.width-150,height=self.height-160,fg_color="white",scrollbar_button_color="white")
+        scroll_frame=ctk.CTkScrollableFrame(self.my_file_frame,width=self.width-150,fg_color="white",scrollbar_button_color="white")
         # File list
         files=self.app.getMyFiles()
         # Create a row for each file
@@ -275,6 +310,10 @@ class DashboardFrame(ctk.CTkFrame):
         # self.current_frame=""
         # self.my_file_frame.pack_forget()
         # self.showMyFiles()
+
+    def uploadFile(self,flag):
+        filePath=ctk.filedialog.askopenfilename()
+        self.app.uploadShareFile(filePath) if flag == 1 else self.app.uploadMyFile(filePath)
 
 def initWindow(APP_NAME, WIDTH, HEIGHT,SHARE_DIR,LOCAL_DIR):
     root=ctk.CTk()
