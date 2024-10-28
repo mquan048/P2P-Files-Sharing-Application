@@ -47,13 +47,18 @@ class App():
     def downloadFile(self,filename, size):
         # TODO: Download file logic
         self.peer.get_available_files()
-        file = Fetch_File(filename, size, self.peer.available_files, self.peer.BUFFE_SIZE, self.peer.local_dir)
+        file = Fetch_File(filename, size, self.peer.available_files, self.peer.BUFFE_SIZE, self.local_dir)
         file.fetch_file()
         del file
 
     def shareFile(self,filename):
         # TODO: Share file logic
-        pass
+        fileSrc = open(Path.joinpath(Path(__file__).parents[1], self.local_dir, filename), 'rb')
+        fileDest = open(Path.joinpath(Path(__file__).parents[1], self.share_dir, filename), 'wb')
+        
+        data = fileSrc.read()
+        fileDest.write(data)
+        
 
     def getSharedFiles(self):
         self.peer.get_available_files()

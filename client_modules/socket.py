@@ -82,12 +82,13 @@ class Peer:
     available_files: dict[(str, int), set[(str, int)]] # dict[(filename, size), set[peer_addr]]
     server: Server
     
-    def __init__(self, server: Server, BUFFE_SIZE, LOCAL_DIR):
+    def __init__(self, server: Server, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
         self.peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.peer.bind(('127.0.0.1', 0))
         
         self.BUFFE_SIZE = BUFFE_SIZE
         self.local_dir = LOCAL_DIR
+        self.share_dir = SHARE_DIR
         
         self.available_files = dict[tuple[str, int], set[tuple[str, int]]]()
         self.server = server
@@ -112,7 +113,7 @@ class Peer:
             if resquest["action"] == "fetch_file":
                 payload = resquest["payload"]
                 
-                file = Read_File(payload["filename"], payload["size"], self.local_dir)
+                file = Read_File(payload["filename"], payload["size"], self.share_dir)
                 data = file.read(payload["chunk_no"])
                 
                 response = {
@@ -133,7 +134,7 @@ class Peer:
             elif resquest["action"] == "get_shared_file":
                 list_files_res = list[tuple[str, int]]()
                 
-                path_folder = Path.joinpath(Path(__file__).parents[1], self.local_dir)
+                path_folder = Path.joinpath(Path(__file__).parents[1], self.share_dir)
                 files = os.listdir(path_folder)
                 for file in files:
                     fileSize = os.path.getsize(Path.joinpath(path_folder, file))
@@ -199,11 +200,11 @@ class Read_File:
     
     chunk_size = CHUNK_SIZE
     
-    def __init__(self, filename, size, local_dir):
+    def __init__(self, filename, size, share_dir):
         self.filename = filename
         self.size = size
-        self.local_dir = local_dir
-        self.path_folder = Path.joinpath(Path(__file__).parents[1], self.local_dir)
+        self.share_dir = share_dir
+        self.path_folder = Path.joinpath(Path(__file__).parents[1], self.share_dir)
         
     def read(self, chunk_no):
         file = open(Path.joinpath(self.path_folder, self.filename), "rb")
@@ -390,10 +391,10 @@ class Fetch_File:
 #         os._exit(0)
         
 
-def initSocket(SERVER_HOST, SERVER_PORT, BUFFE_SIZE, LOCAL_DIR):
+def initSocket(SERVER_HOST, SERVER_PORT, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
     server = Server(SERVER_HOST, SERVER_PORT, BUFFE_SIZE)
     server.run()
-    peer = Peer(server, BUFFE_SIZE, LOCAL_DIR) 
+    peer = Peer(server, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR) 
     peer.run()
     
     return server, peer

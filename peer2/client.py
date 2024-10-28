@@ -18,11 +18,12 @@ LOCAL_DIR   = os.getenv('LOCAL_DIR')
 if __name__ == '__main__':
     try:
         # Initialize socket connection
-        server, peer = initSocket(SERVER_HOST, SERVER_PORT, BUFFE_SIZE, LOCAL_DIR)
+        server, peer = initSocket(SERVER_HOST, SERVER_PORT, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR)
     	# Initialize window
         initWindow(APP_NAME, WIDTH, HEIGHT, SHARE_DIR, LOCAL_DIR, server, peer)
     except Exception as e:
         print(f"An exception occurred: {e}")
     finally:
         print("Program terminated")
+        os._exit(0)
 
