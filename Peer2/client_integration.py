@@ -249,7 +249,7 @@ class Fetch_File:
     def __init__(self, filename, size, available_files):
         self.filename = filename
         self.size = size
-        self.path_folder = Path.joinpath(Path(__file__).parent, "shared_files")
+        self.path_folder = Path.joinpath(Path(__file__).parent, "received_files")
 
         self.init_chunk()
 
