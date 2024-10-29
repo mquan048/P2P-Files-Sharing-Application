@@ -275,8 +275,7 @@ class Fetch_File:
     
     def fetch_file(self):
         if not self.peers:
-            print("File not found.")
-            return
+            return "File not found."
         
         running_thread = list[threading.Thread]()
         progress = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000, total=self.size, desc=self.filename)
@@ -296,7 +295,7 @@ class Fetch_File:
             
         file.close()
         
-        # print(f"Fetch file {self.filename} successfully.")
+        return f"Fetch file {self.filename} successfully."
     
     def fetch_chunk(self, peer: socket.socket, progress: tqdm.tqdm):
         while True:
@@ -329,67 +328,6 @@ class Fetch_File:
                 peer.send(pickle.dumps(resquest))
                 peer.close()
                 break                           
-
-# if __name__ == "__main__":
-#     try:
-#         server = Server()
-#         server.run()
-#         peer = Peer(server) 
-#         peer.run()
-       
-#         print("Give one of the commands:")
-#         print("1|login: Log in to server")
-#         print("2|get_peer: Get list of peers in network")
-#         print("3|get_available_files: Get the list of available files in network")
-#         print("4|fetch_file: Download file from peers in network")
-#         print("5|logout: Log out from server")
-#         print("6|close: Close connection with server and exit program\n\n")
-        
-#         while True:
-#             inp = input(">>")
-#             if inp == "login" or inp == "1":
-#                 if server.user is None:
-#                     username = input("username: ")
-#                     password = input("password: ")
-                    
-#                     server.login(username, password, peer.peer.getsockname())
-                    
-#                 else:
-#                     print("You are already logged in, so cannot log in again.")
-             
-#             elif inp == "get_peer" or inp == "2":
-#                 server.get_peer_info()
-#                 print(server.list_peers_addr)
-                    
-#             elif inp == "get_available_files" or inp == "3":
-#                 server.get_peer_info()
-#                 peer.get_available_files()
-#                 print(peer.available_files)
-                
-#             elif inp == "fetch_file" or inp == "4": 
-#                 server.get_peer_info()
-#                 peer.get_available_files()
-                  
-#                 filename = input("filename: ")
-#                 size = int(input("size: "))
-                
-#                 file = Fetch_File(filename, size, peer.available_files, BUFFE_SIZE)
-#                 file.fetch_file()
-#                 del file
-                
-#             elif inp == "logout" or inp == "5":
-#                 if server.user is None:
-#                     print("You are not logged in, so cannot log out.")
-                    
-#                 else:
-#                     server.logout()
-                    
-#             elif inp == "close" or inp == "6":
-#                 os._exit(0)
-                
-#     except KeyboardInterrupt:
-#         os._exit(0)
-        
 
 def initSocket(SERVER_HOST, SERVER_PORT, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
     server = Server(SERVER_HOST, SERVER_PORT, BUFFE_SIZE)
