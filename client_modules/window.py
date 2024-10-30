@@ -296,7 +296,7 @@ class DashboardFrame(ctk.CTkFrame):
         upload_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
         upload_frame.pack_propagate(0)
         upload_label=ctk.CTkLabel(upload_frame,text="Upload file:",font=("Arial", 18), text_color="black")
-        upload_label.pack(side="left",padx=(0,20))
+        upload_label.pack(side="left",padx=(0,10))
         upload_button=ctk.CTkButton(upload_frame,text="Choose",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=lambda: self.uploadFile(2),hover_color="#6C6C6C")
         upload_button.pack(side="left")
         upload_frame.pack(pady=20)
