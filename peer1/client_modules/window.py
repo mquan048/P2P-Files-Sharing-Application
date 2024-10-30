@@ -35,9 +35,9 @@ class App():
         is_success, msg = self.server.login(username, password, self.peer.peer.getsockname())
         if is_success:
             self.changeDashboardFrame()
-        
+
         else:
-            self.login_screen.show(msg)    
+            self.login_screen.show(msg)
 
     def logout(self):
         # TODO: Logout logic
@@ -50,7 +50,7 @@ class App():
         file = Fetch_File(filename, size, self.peer.available_files, self.peer.BUFFE_SIZE, self.local_dir)
         msg = file.fetch_file()
         del file
-        
+
         if msg == "File not found.":
             self.showMessageBox('Error', msg)
         else:
@@ -61,7 +61,7 @@ class App():
         with open(Path.joinpath(Path(__file__).parents[1], self.local_dir, filename), 'rb') as fileSrc:
             with open(Path.joinpath(Path(__file__).parents[1], self.share_dir, filename), 'wb') as fileDest:
                 fileDest.write(fileSrc.read())
-        
+
         self.showMessageBox('Success','Thank you for your sharing!')
 
     def getSharedFiles(self):
@@ -221,7 +221,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
         label=ctk.CTkLabel(self.shared_file_frame,text="Shared files",font=("Arial", 30), text_color="black")
-        label.pack(pady=20)
+        label.pack(pady=(20,0))
         # File upload button
         upload_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
         upload_frame.pack_propagate(0)
@@ -229,7 +229,15 @@ class DashboardFrame(ctk.CTkFrame):
         upload_label.pack(side="left",padx=(0,20))
         upload_button=ctk.CTkButton(upload_frame,text="Choose",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=lambda: self.uploadFile(1),hover_color="#6C6C6C")
         upload_button.pack(side="left")
-        upload_frame.pack()
+        upload_frame.pack(pady=20)
+        # Refresh button
+        refresh_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
+        refresh_frame.pack_propagate(0)
+        refresh_label=ctk.CTkLabel(refresh_frame,text="Refresh list",font=("Arial", 18), text_color="black")
+        refresh_label.pack(side="left",padx=(0,20))
+        refresh_button=ctk.CTkButton(refresh_frame,text="Click",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=self.app.refreshShareFrame,hover_color="#6C6C6C")
+        refresh_button.pack(side="left")
+        refresh_frame.pack()
         # Header frame
         header_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-150,height=50,fg_color="white")
         header_frame.pack_propagate(0)
@@ -280,7 +288,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.my_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
         label=ctk.CTkLabel(self.my_file_frame,text="My files",font=("Arial", 30), text_color="black")
-        label.pack(pady=20)
+        label.pack(pady=(20,0))
         # File upload button
         upload_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
         upload_frame.pack_propagate(0)
@@ -288,7 +296,15 @@ class DashboardFrame(ctk.CTkFrame):
         upload_label.pack(side="left",padx=(0,20))
         upload_button=ctk.CTkButton(upload_frame,text="Choose",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=lambda: self.uploadFile(2),hover_color="#6C6C6C")
         upload_button.pack(side="left")
-        upload_frame.pack()
+        upload_frame.pack(pady=20)
+        # Refresh button
+        refresh_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
+        refresh_frame.pack_propagate(0)
+        refresh_label=ctk.CTkLabel(refresh_frame,text="Refresh list",font=("Arial", 18), text_color="black")
+        refresh_label.pack(side="left",padx=(0,20))
+        refresh_button=ctk.CTkButton(refresh_frame,text="Click",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=self.app.refreshMyFrame,hover_color="#6C6C6C")
+        refresh_button.pack(side="left")
+        refresh_frame.pack()
         # Header frame
         header_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-150,height=50,fg_color="white")
         header_frame.pack_propagate(0)
