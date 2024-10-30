@@ -195,9 +195,11 @@ class DashboardFrame(ctk.CTkFrame):
         self.right_frame=ctk.CTkFrame(self.main_frame,width=self.width-150,height=self.height,fg_color="white",corner_radius=0)
         self.right_frame.pack_propagate(0)
         # Menu items
-        share_button = ctk.CTkButton(left_frame,text="Shared files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showSharedFiles())
+        user = ctk.CTkLabel(left_frame, text=f'Hello {self.app.server.user}', text_color="green")
+        user.pack(pady=(20,15))
+        share_button = ctk.CTkButton(left_frame,text="Download",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showSharedFiles())
         share_button.pack(pady=(20,15))
-        local_button = ctk.CTkButton(left_frame,text="My files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showMyFiles())
+        local_button = ctk.CTkButton(left_frame,text="My local files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showMyFiles())
         local_button.pack(pady=(15,20))
         logout_button = ctk.CTkButton(left_frame,text="Logout",font=("Arial", 20),fg_color="white",text_color="red",corner_radius=0,width=150,hover_color="white",command=self.app.logout)
         logout_button.pack(pady=(self.height-175,0))
@@ -220,7 +222,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.current_frame = "shared_files"
         self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
-        label=ctk.CTkLabel(self.shared_file_frame,text="Shared files",font=("Arial", 30), text_color="black")
+        label=ctk.CTkLabel(self.shared_file_frame,text="Let download your favourite",font=("Arial", 30), text_color="black")
         label.pack(pady=(20,0))
         # File upload button
         upload_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
@@ -277,7 +279,7 @@ class DashboardFrame(ctk.CTkFrame):
         # Pack
         scroll_frame.pack(fill="both", expand=True)
         self.shared_file_frame.pack(fill="both", expand=True)
-        # Remove my files frame
+        # Remove My local files frame
         if removeOtherFrame and hasattr(self, 'my_file_frame'):
             self.my_file_frame.pack_forget()
 
@@ -287,7 +289,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.current_frame = "my_files"
         self.my_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
-        label=ctk.CTkLabel(self.my_file_frame,text="My files",font=("Arial", 30), text_color="black")
+        label=ctk.CTkLabel(self.my_file_frame,text="My local files",font=("Arial", 30), text_color="black")
         label.pack(pady=(20,0))
         # File upload button
         upload_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
@@ -348,8 +350,8 @@ class DashboardFrame(ctk.CTkFrame):
         if removeOtherFrame and hasattr(self, 'shared_file_frame'):
             self.shared_file_frame.pack_forget()
 
-    def downloadFile(self,filename):
-        self.app.downloadFile(filename)
+    def downloadFile(self,filename, size):
+        self.app.downloadFile(filename, size)
         # self.current_frame=""
         # self.shared_file_frame.pack_forget()
         # self.showSharedFiles()
