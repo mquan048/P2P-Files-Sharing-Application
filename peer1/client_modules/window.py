@@ -114,12 +114,12 @@ class App():
         self.showMessageBox('Success','File uploaded successfully!')
 
     def refreshShareFrame(self):
-        self.dashboard_screen.showMyFiles()
-        self.dashboard_screen.showSharedFiles()
+        self.dashboard_screen.hideSharedFiles()
+        self.dashboard_screen.showSharedFiles(False)
 
     def refreshMyFrame(self):
-        self.dashboard_screen.showSharedFiles()
-        self.dashboard_screen.showMyFiles()
+        self.dashboard_screen.hideMyFiles()
+        self.dashboard_screen.showMyFiles(False)
 
     def showMessageBox(self,title,message):
         messageBox=tk.messagebox.showinfo(title,message)
@@ -183,26 +183,27 @@ class DashboardFrame(ctk.CTkFrame):
         self.width = width
         self.height = height
         self.main_frame = ctk.CTkFrame(master)
+        self.refresh_image=ctk.CTkImage(light_image=Image.open("public/refresh.png"),dark_image=Image.open("public/refresh.png"),size=(20,20))
 
     def show(self):
         # Left menu
-        left_frame=ctk.CTkFrame(self.main_frame,width=150,height=self.height,fg_color="white",corner_radius=0)
+        left_frame=ctk.CTkFrame(self.main_frame,width=150,height=self.height,fg_color="#E9E9E9",corner_radius=0)
         left_frame.pack_propagate(0)
         # Vertical line
         vertical_line = ctk.CTkFrame(left_frame,width=1,height=self.height-10,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         vertical_line.pack(side="right")
         # Right panel
-        self.right_frame=ctk.CTkFrame(self.main_frame,width=self.width-150,height=self.height,fg_color="white",corner_radius=0)
+        self.right_frame=ctk.CTkFrame(self.main_frame,width=self.width-150,height=self.height,fg_color="#E9E9E9",corner_radius=0)
         self.right_frame.pack_propagate(0)
         # Menu items
-        user = ctk.CTkLabel(left_frame, text=f'Hello {self.app.server.user}', text_color="green")
+        user = ctk.CTkLabel(left_frame, text=f'Hello {self.app.server.user}', text_color="green", font=("Arial", 20))
         user.pack(pady=(20,15))
-        share_button = ctk.CTkButton(left_frame,text="Download",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showSharedFiles())
+        share_button = ctk.CTkButton(left_frame,text="Download",font=("Arial", 18),fg_color="#E9E9E9",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showSharedFiles())
         share_button.pack(pady=(20,15))
-        local_button = ctk.CTkButton(left_frame,text="My local files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showMyFiles())
+        local_button = ctk.CTkButton(left_frame,text="My local files",font=("Arial", 18),fg_color="#E9E9E9",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showMyFiles())
         local_button.pack(pady=(15,20))
-        logout_button = ctk.CTkButton(left_frame,text="Logout",font=("Arial", 20),fg_color="white",text_color="red",corner_radius=0,width=150,hover_color="white",command=self.app.logout)
-        logout_button.pack(pady=(self.height-175,0))
+        logout_button = ctk.CTkButton(left_frame,text="Logout",font=("Arial", 20),fg_color="red",text_color="white",corner_radius=5,width=125,hover_color="#FFAEAE",command=self.app.logout,height=30)
+        logout_button.pack(pady=(self.height-250,0))
         # Create 2 main frames
         self.showSharedFiles(False)
         self.showMyFiles(False)
@@ -220,12 +221,12 @@ class DashboardFrame(ctk.CTkFrame):
         if hasattr(self, 'current_frame') and self.current_frame == "shared_files":
             return
         self.current_frame = "shared_files"
-        self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
+        self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="#E9E9E9")
         # Label
-        label=ctk.CTkLabel(self.shared_file_frame,text="Let's download your favourite files",font=("Arial", 30), text_color="black")
-        label.pack(pady=(20,0))
+        label=ctk.CTkLabel(self.shared_file_frame,text="Let's download your favourite files",font=("Arial", 30, "bold"), text_color="black")
+        label.pack(pady=20)
         # File upload button
-        # upload_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
+        # upload_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="#E9E9E9")
         # upload_frame.pack_propagate(0)
         # upload_label=ctk.CTkLabel(upload_frame,text="Upload file:",font=("Arial", 18), text_color="black")
         # upload_label.pack(side="left",padx=(0,20))
@@ -233,15 +234,15 @@ class DashboardFrame(ctk.CTkFrame):
         # upload_button.pack(side="left")
         # upload_frame.pack(pady=20)
         # Refresh button
-        refresh_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
+        refresh_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="#E9E9E9")
         refresh_frame.pack_propagate(0)
         refresh_label=ctk.CTkLabel(refresh_frame,text="Refresh list",font=("Arial", 18), text_color="black")
-        refresh_label.pack(side="left",padx=(0,20))
-        refresh_button=ctk.CTkButton(refresh_frame,text="Click",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=self.app.refreshShareFrame,hover_color="#6C6C6C")
+        refresh_label.pack(side="left",padx=(0,10))
+        refresh_button=ctk.CTkButton(refresh_frame,image=self.refresh_image,font=("Arial", 16),corner_radius=5,command=self.app.refreshShareFrame,text="",width=40,height=40)
         refresh_button.pack(side="left")
         refresh_frame.pack()
         # Header frame
-        header_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-150,height=50,fg_color="white")
+        header_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-150,height=50,fg_color="#E9E9E9")
         header_frame.pack_propagate(0)
         file_name_label=ctk.CTkLabel(header_frame,text="File name",font=("Arial", 16),width=int((self.width-200)*0.4), text_color="black")
         file_name_label.pack(side="left")
@@ -254,12 +255,12 @@ class DashboardFrame(ctk.CTkFrame):
         horizontal_line=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
         # Scrollable frame
-        scroll_frame=ctk.CTkScrollableFrame(self.shared_file_frame,width=self.width-150,fg_color="white",scrollbar_button_color="white")
+        scroll_frame=ctk.CTkScrollableFrame(self.shared_file_frame,width=self.width-150,fg_color="#E9E9E9",scrollbar_button_color="white")
         # File list
         files=self.app.getSharedFiles()
         # Create a row for each file
         for file in files:
-            row_frame=ctk.CTkFrame(scroll_frame,width=self.width-150,height=50,fg_color="white")
+            row_frame=ctk.CTkFrame(scroll_frame,width=self.width-150,height=50,fg_color="#E9E9E9")
             row_frame.pack_propagate(0)
             file_name_label=ctk.CTkLabel(row_frame,text=file['filename'],font=("Arial", 16),width=int((self.width-200)*0.4), text_color="black")
             file_name_label.pack(side="left")
@@ -287,28 +288,28 @@ class DashboardFrame(ctk.CTkFrame):
         if hasattr(self, 'current_frame') and self.current_frame == "my_files":
             return
         self.current_frame = "my_files"
-        self.my_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
+        self.my_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="#E9E9E9")
         # Label
-        label=ctk.CTkLabel(self.my_file_frame,text="My local files",font=("Arial", 30), text_color="black")
+        label=ctk.CTkLabel(self.my_file_frame,text="My local files",font=("Arial", 30, "bold"), text_color="black")
         label.pack(pady=(20,0))
         # File upload button
-        upload_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
+        upload_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="#E9E9E9")
         upload_frame.pack_propagate(0)
         upload_label=ctk.CTkLabel(upload_frame,text="Upload file:",font=("Arial", 18), text_color="black")
-        upload_label.pack(side="left",padx=(0,20))
+        upload_label.pack(side="left",padx=(0,10))
         upload_button=ctk.CTkButton(upload_frame,text="Choose",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=lambda: self.uploadFile(2),hover_color="#6C6C6C")
         upload_button.pack(side="left")
         upload_frame.pack(pady=20)
         # Refresh button
-        refresh_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
+        refresh_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="#E9E9E9")
         refresh_frame.pack_propagate(0)
         refresh_label=ctk.CTkLabel(refresh_frame,text="Refresh list",font=("Arial", 18), text_color="black")
-        refresh_label.pack(side="left",padx=(0,20))
-        refresh_button=ctk.CTkButton(refresh_frame,text="Click",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=self.app.refreshMyFrame,hover_color="#6C6C6C")
+        refresh_label.pack(side="left",padx=(0,10))
+        refresh_button=ctk.CTkButton(refresh_frame,image=self.refresh_image,font=("Arial", 16),corner_radius=5,command=self.app.refreshMyFrame,text="",width=40,height=40)
         refresh_button.pack(side="left")
         refresh_frame.pack()
         # Header frame
-        header_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-150,height=50,fg_color="white")
+        header_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-150,height=50,fg_color="#E9E9E9")
         header_frame.pack_propagate(0)
         file_name_label=ctk.CTkLabel(header_frame,text="File name",font=("Arial", 16),width=int((self.width-200)*0.4), text_color="black")
         file_name_label.pack(side="left")
@@ -321,12 +322,12 @@ class DashboardFrame(ctk.CTkFrame):
         horizontal_line=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=1,fg_color="#9E9E9E",border_color="#9E9E9E",border_width=1)
         horizontal_line.pack()
         # Scrollable frame
-        scroll_frame=ctk.CTkScrollableFrame(self.my_file_frame,width=self.width-150,fg_color="white",scrollbar_button_color="white")
+        scroll_frame=ctk.CTkScrollableFrame(self.my_file_frame,width=self.width-150,fg_color="#E9E9E9",scrollbar_button_color="white")
         # File list
         files=self.app.getMyFiles()
         # Create a row for each file
         for file in files:
-            row_frame=ctk.CTkFrame(scroll_frame,width=self.width-150,height=50,fg_color="white")
+            row_frame=ctk.CTkFrame(scroll_frame,width=self.width-150,height=50,fg_color="#E9E9E9")
             row_frame.pack_propagate(0)
             file_name_label=ctk.CTkLabel(row_frame,text=file['filename'],font=("Arial", 16),width=int((self.width-200)*0.4), text_color="black")
             file_name_label.pack(side="left")
@@ -367,6 +368,14 @@ class DashboardFrame(ctk.CTkFrame):
         if filePath == "":
             return
         self.app.uploadShareFile(filePath) if flag == 1 else self.app.uploadMyFile(filePath)
+
+    def hideSharedFiles(self):
+        self.shared_file_frame.pack_forget()
+        self.current_frame = ""
+
+    def hideMyFiles(self):
+        self.my_file_frame.pack_forget()
+        self.current_frame = ""
 
 def initWindow(APP_NAME, WIDTH, HEIGHT, SHARE_DIR, LOCAL_DIR, server: socket.socket, peer: socket.socket):
     root=ctk.CTk()
