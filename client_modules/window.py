@@ -114,12 +114,12 @@ class App():
         self.showMessageBox('Success','File uploaded successfully!')
 
     def refreshShareFrame(self):
-        self.dashboard_screen.showMyFiles()
-        self.dashboard_screen.showSharedFiles()
+        self.dashboard_screen.hideSharedFiles()
+        self.dashboard_screen.showSharedFiles(False)
 
     def refreshMyFrame(self):
-        self.dashboard_screen.showSharedFiles()
-        self.dashboard_screen.showMyFiles()
+        self.dashboard_screen.hideMyFiles()
+        self.dashboard_screen.showMyFiles(False)
 
     def showMessageBox(self,title,message):
         messageBox=tk.messagebox.showinfo(title,message)
@@ -183,6 +183,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.width = width
         self.height = height
         self.main_frame = ctk.CTkFrame(master)
+        self.refresh_image=ctk.CTkImage(light_image=Image.open("public/refresh.png"),dark_image=Image.open("public/refresh.png"),size=(20,20))
 
     def show(self):
         # Left menu
@@ -195,14 +196,14 @@ class DashboardFrame(ctk.CTkFrame):
         self.right_frame=ctk.CTkFrame(self.main_frame,width=self.width-150,height=self.height,fg_color="white",corner_radius=0)
         self.right_frame.pack_propagate(0)
         # Menu items
-        user = ctk.CTkLabel(left_frame, text=f'Hello {self.app.server.user}', text_color="green")
+        user = ctk.CTkLabel(left_frame, text=f'Hello {self.app.server.user}', text_color="green", font=("Arial", 20))
         user.pack(pady=(20,15))
         share_button = ctk.CTkButton(left_frame,text="Download",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showSharedFiles())
         share_button.pack(pady=(20,15))
         local_button = ctk.CTkButton(left_frame,text="My local files",font=("Arial", 18),fg_color="white",text_color="blue",corner_radius=0,hover_color="white",width=150,command=lambda: self.showMyFiles())
         local_button.pack(pady=(15,20))
-        logout_button = ctk.CTkButton(left_frame,text="Logout",font=("Arial", 20),fg_color="white",text_color="red",corner_radius=0,width=150,hover_color="white",command=self.app.logout)
-        logout_button.pack(pady=(self.height-175,0))
+        logout_button = ctk.CTkButton(left_frame,text="Logout",font=("Arial", 20),fg_color="red",text_color="white",corner_radius=5,width=125,hover_color="#FFAEAE",command=self.app.logout,height=30)
+        logout_button.pack(pady=(self.height-250,0))
         # Create 2 main frames
         self.showSharedFiles(False)
         self.showMyFiles(False)
@@ -222,8 +223,8 @@ class DashboardFrame(ctk.CTkFrame):
         self.current_frame = "shared_files"
         self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
-        label=ctk.CTkLabel(self.shared_file_frame,text="Let's download your favourite files",font=("Arial", 30), text_color="black")
-        label.pack(pady=(20,0))
+        label=ctk.CTkLabel(self.shared_file_frame,text="Let's download your favourite files",font=("Arial", 30, "bold"), text_color="black")
+        label.pack(pady=20)
         # File upload button
         # upload_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
         # upload_frame.pack_propagate(0)
@@ -236,8 +237,8 @@ class DashboardFrame(ctk.CTkFrame):
         refresh_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
         refresh_frame.pack_propagate(0)
         refresh_label=ctk.CTkLabel(refresh_frame,text="Refresh list",font=("Arial", 18), text_color="black")
-        refresh_label.pack(side="left",padx=(0,20))
-        refresh_button=ctk.CTkButton(refresh_frame,text="Click",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=self.app.refreshShareFrame,hover_color="#6C6C6C")
+        refresh_label.pack(side="left",padx=(0,10))
+        refresh_button=ctk.CTkButton(refresh_frame,image=self.refresh_image,font=("Arial", 16),corner_radius=5,command=self.app.refreshShareFrame,text="",width=40,height=40)
         refresh_button.pack(side="left")
         refresh_frame.pack()
         # Header frame
@@ -289,7 +290,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.current_frame = "my_files"
         self.my_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
-        label=ctk.CTkLabel(self.my_file_frame,text="My local files",font=("Arial", 30), text_color="black")
+        label=ctk.CTkLabel(self.my_file_frame,text="My local files",font=("Arial", 30, "bold"), text_color="black")
         label.pack(pady=(20,0))
         # File upload button
         upload_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
@@ -303,8 +304,8 @@ class DashboardFrame(ctk.CTkFrame):
         refresh_frame=ctk.CTkFrame(self.my_file_frame,width=self.width-200,height=25,fg_color="white")
         refresh_frame.pack_propagate(0)
         refresh_label=ctk.CTkLabel(refresh_frame,text="Refresh list",font=("Arial", 18), text_color="black")
-        refresh_label.pack(side="left",padx=(0,20))
-        refresh_button=ctk.CTkButton(refresh_frame,text="Click",font=("Arial", 16),fg_color="#9E9E9E",text_color="white",corner_radius=5,command=self.app.refreshMyFrame,hover_color="#6C6C6C")
+        refresh_label.pack(side="left",padx=(0,10))
+        refresh_button=ctk.CTkButton(refresh_frame,image=self.refresh_image,font=("Arial", 16),corner_radius=5,command=self.app.refreshMyFrame,text="",width=40,height=40)
         refresh_button.pack(side="left")
         refresh_frame.pack()
         # Header frame
@@ -367,6 +368,14 @@ class DashboardFrame(ctk.CTkFrame):
         if filePath == "":
             return
         self.app.uploadShareFile(filePath) if flag == 1 else self.app.uploadMyFile(filePath)
+
+    def hideSharedFiles(self):
+        self.shared_file_frame.pack_forget()
+        self.current_frame = ""
+
+    def hideMyFiles(self):
+        self.my_file_frame.pack_forget()
+        self.current_frame = ""
 
 def initWindow(APP_NAME, WIDTH, HEIGHT, SHARE_DIR, LOCAL_DIR, server: socket.socket, peer: socket.socket):
     root=ctk.CTk()
