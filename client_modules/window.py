@@ -222,7 +222,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.current_frame = "shared_files"
         self.shared_file_frame=ctk.CTkFrame(self.right_frame,width=self.width-150,height=self.height,fg_color="white")
         # Label
-        label=ctk.CTkLabel(self.shared_file_frame,text="Let download your favourite",font=("Arial", 30), text_color="black")
+        label=ctk.CTkLabel(self.shared_file_frame,text="Let's download your favourite files",font=("Arial", 30), text_color="black")
         label.pack(pady=(20,0))
         # File upload button
         # upload_frame=ctk.CTkFrame(self.shared_file_frame,width=self.width-200,height=25,fg_color="white")
