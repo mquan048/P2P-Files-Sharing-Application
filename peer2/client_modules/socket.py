@@ -11,10 +11,12 @@ CHUNK_SIZE = 512
 class Server:
     server: socket.socket
     list_peers_addr: list[(str, int)]
+    peer_addr: tuple[str, int]
     user = None
     
-    def __init__(self, SERVER_HOST, SERVER_PORT, BUFFE_SIZE):
+    def __init__(self, SERVER_HOST, SERVER_PORT, BACKUP_HOST, BACKUP_PORT, BUFFE_SIZE):
         self.server_addr = (SERVER_HOST, SERVER_PORT)
+        self.server_backup_addr = (BACKUP_HOST, BACKUP_PORT)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
         self.BUFFE_SIZE = BUFFE_SIZE
@@ -25,23 +27,57 @@ class Server:
     def __del__(self):
         self.server.close()
         
-    def run(self):
-        self.server.connect(self.server_addr)
-        print(f'Connecting to server {self.server_addr[0]}:{self.server_addr[1]}')
+    def run(self, peer):
+        try:
+            self.peer_addr = peer.peer.getsockname()
         
-    def login(self, username, password, peer_addr):
+            self.server.connect(self.server_addr)
+            print(f'Connecting to server {self.server_addr[0]}:{self.server_addr[1]}')
+        except:
+            self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server.connect(self.server_backup_addr)
+            print(f'Connecting to server backup {self.server_backup_addr[0]}:{self.server_backup_addr[1]}')
+    
+    def reconnect_server_backup(self, request):
+        try:
+            self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server.connect(self.server_backup_addr)
+            print(f'Connecting to server backup {self.server_backup_addr[0]}:{self.server_backup_addr[1]}')
+            # Send info user to server backup
+            self.server.send(pickle.dumps({
+                "type": "request",
+                "action": "connect_backup",
+                "user": self.user,
+                "payload": {
+                    "peer_addr": self.peer_addr
+                },
+            }))
+            self.server.recv(self.BUFFE_SIZE)
+            # Send the request again
+            self.server.send(pickle.dumps(request))
+            response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
+            
+            return response
+            
+        except:
+            print("Server and server backup are not available")
+            os._exit(0)
+        
+    def login(self, username, password):
         request = {
             "type": "request",
             "action": "login",
             "payload": {
                 "username": username,
                 "password": password,
-                "peer_addr": peer_addr,
+                "peer_addr": self.peer_addr,
             },
         }
-        self.server.send(pickle.dumps(request))
-        
-        response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
+        try:
+            self.server.send(pickle.dumps(request))
+            response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
+        except:
+            response = self.reconnect_server_backup(request)
         print(response["payload"])
         if response["status"] == 200:
             self.user = username
@@ -55,9 +91,11 @@ class Server:
             "user": self.user,
             "action": "logout",
         }
-        self.server.send(pickle.dumps(request))
-        
-        response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
+        try:
+            self.server.send(pickle.dumps(request))
+            response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
+        except:
+            response = self.reconnect_server_backup(request)
         print(response["payload"])
         
         self.user = None
@@ -68,9 +106,11 @@ class Server:
             "user": self.user,
             "action": "get_peer_info",
         }   
-        self.server.send(pickle.dumps(request))
-    
-        response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
+        try:
+            self.server.send(pickle.dumps(request))
+            response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
+        except:
+            response = self.reconnect_server_backup(request)
         if response["status"] == 401:
             print(response["payload"])
             
@@ -329,10 +369,10 @@ class Fetch_File:
                 peer.close()
                 break                           
 
-def initSocket(SERVER_HOST, SERVER_PORT, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
-    server = Server(SERVER_HOST, SERVER_PORT, BUFFE_SIZE)
-    server.run()
+def initSocket(SERVER_HOST, SERVER_PORT, BACKUP_HOST, BACKUP_PORT, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
+    server = Server(SERVER_HOST, SERVER_PORT, BACKUP_HOST, BACKUP_PORT, BUFFE_SIZE)
     peer = Peer(server, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR) 
+    server.run(peer)
     peer.run()
     
     return server, peer

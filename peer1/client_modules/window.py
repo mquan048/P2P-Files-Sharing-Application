@@ -32,7 +32,7 @@ class App():
     def login(self,username,password):
         print(f"Username: {username}, Password: {password}")
         # TODO: If user authenticated -> change to login frame
-        is_success, msg = self.server.login(username, password, self.peer.peer.getsockname())
+        is_success, msg = self.server.login(username, password)
         if is_success:
             self.changeDashboardFrame()
 
