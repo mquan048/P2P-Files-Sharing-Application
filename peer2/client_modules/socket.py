@@ -124,7 +124,7 @@ class Peer:
     
     def __init__(self, server: Server, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
         self.peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.peer.bind(('127.0.0.1', 0))
+        self.peer.bind(("192.168.42.211", 0))
         
         self.BUFFE_SIZE = BUFFE_SIZE
         self.local_dir = LOCAL_DIR

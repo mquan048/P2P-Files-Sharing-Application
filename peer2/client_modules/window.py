@@ -47,6 +47,9 @@ class App():
     def downloadFile(self,filename, size):
         # TODO: Download file logic
         self.peer.get_available_files()
+        threading.Thread(target=self.handle, args=(filename, size,)).start()
+
+    def handle(self, filename, size):
         file = Fetch_File(filename, size, self.peer.available_files, self.peer.BUFFE_SIZE, self.local_dir)
         msg = file.fetch_file()
         del file
@@ -55,7 +58,7 @@ class App():
             self.showMessageBox('Error', msg)
         else:
             self.showMessageBox('Success', msg)
-
+            
     def shareFile(self,filename):
         # TODO: Share file logic
         with open(Path.joinpath(Path(__file__).parents[1], self.local_dir, filename), 'rb') as fileSrc:
