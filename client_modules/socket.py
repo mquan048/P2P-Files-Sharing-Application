@@ -111,6 +111,7 @@ class Server:
             response = pickle.loads(self.server.recv(self.BUFFE_SIZE))
         except:
             response = self.reconnect_server_backup(request)
+            
         if response["status"] == 401:
             print(response["payload"])
             
@@ -122,9 +123,9 @@ class Peer:
     available_files: dict[(str, int), set[(str, int)]] # dict[(filename, size), set[peer_addr]]
     server: Server
     
-    def __init__(self, server: Server, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
+    def __init__(self, server: Server,PEER_HOST, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
         self.peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.peer.bind(("192.168.42.211", 0))
+        self.peer.bind((PEER_HOST, 0))
         
         self.BUFFE_SIZE = BUFFE_SIZE
         self.local_dir = LOCAL_DIR
@@ -357,7 +358,7 @@ class Fetch_File:
                 
                 data = response["payload"]["data"]
                 self.chunk_data[chunk_no] = data
-                
+                print(f'{peer.getpeername()}: {chunk_no}/{self.total_chunk}')
                 progress.update(self.chunk_size)
                 
             else:
@@ -369,9 +370,9 @@ class Fetch_File:
                 peer.close()
                 break                           
 
-def initSocket(SERVER_HOST, SERVER_PORT, BACKUP_HOST, BACKUP_PORT, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
+def initSocket(SERVER_HOST, SERVER_PORT, BACKUP_HOST, BACKUP_PORT, PEER_HOST, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR):
     server = Server(SERVER_HOST, SERVER_PORT, BACKUP_HOST, BACKUP_PORT, BUFFE_SIZE)
-    peer = Peer(server, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR) 
+    peer = Peer(server, PEER_HOST, BUFFE_SIZE, LOCAL_DIR, SHARE_DIR) 
     server.run(peer)
     peer.run()
     
