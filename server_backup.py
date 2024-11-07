@@ -1,3 +1,4 @@
+from server import Server
 import socket
 import threading
 import json
@@ -5,43 +6,56 @@ import os
 import pickle
 from pathlib import Path
 from dotenv import load_dotenv
+from server import Server
 
 load_dotenv()
 
 SERVER_HOST = os.getenv('SERVER_HOST')
 SERVER_PORT = int(os.getenv('SERVER_PORT'))
+BACKUP_HOST = os.getenv('BACKUP_HOST')
+BACKUP_PORT = int(os.getenv('BACKUP_PORT'))
 BUFFE_SIZE  = int(os.getenv('BUFFE_SIZE'))
 
-class Server:
-    server: socket.socket
-    server_backup: socket.socket
-    connections: dict[str, tuple[socket.socket, (str, int)]]  # dict[username, (socket, peer_addr)]
-    
+class Server_Backup(Server):
     def __init__(self):
-        self.addr = (SERVER_HOST, SERVER_PORT)
+        self.addr = (BACKUP_HOST, BACKUP_PORT)
         self.connections = dict[str, tuple[socket.socket, tuple[str, int]]]()
         
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(self.addr)
         self.server.listen(10)
         
-        self.server_backup = None
-        
-        print(f"Server is running on {self.addr[0]}:{self.addr[1]}")
-        
-    def __del__(self):
-        self.server.close()
-    
+        print(f"Server backup is running on {self.addr[0]}:{self.addr[1]}")
+     
     def run(self):
         self.accept_thread = threading.Thread(target=self.accept_connection)
-        self.accept_thread.start()   
-                
-    def accept_connection(self):
-        while True:
-            client, client_addr = self.server.accept()
-            print(f"{client_addr[0]}:{client_addr[1]} has connected.")
-            client_thread = threading.Thread(target=self.recv_req, args=(client,))
-            client_thread.start()
+        self.accept_thread.start()    
+        self.server_main_thread = threading.Thread(target=self.conn_server_main_thread)
+        self.server_main_thread.start()
+    
+    def conn_server_main_thread(self):
+        try:
+            self.server_main = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server_main.connect((SERVER_HOST, SERVER_PORT))
+        
+            self.server_main.send(pickle.dumps({
+                "type": "request",
+                "action": "conn_server_main",
+            }))
+            self.server_main.recv(BUFFE_SIZE)
+        
+            while True:
+                request = pickle.loads(self.server_main.recv(BUFFE_SIZE))
+                connections = request["payload"]["connections"]
+                for key in connections:
+                    self.connections[key] = (None, connections[key])
+                self.server_main.send(pickle.dumps({
+                    "type": "response",
+                    "action": "send_connections",
+                    "status": 200,
+                }))
+        except:
+            self.server_main = None
     
     def recv_req(self, client: socket.socket):
         while True:
@@ -59,41 +73,24 @@ class Server:
                 elif request["action"] == "close_conn":
                     client.close()
                     
-                elif request["action"] == "conn_server_main":
-                    self.conn_server_backup(client)
-                    break
-                
+                elif request["action"] == "connect_backup":
+                    self.connect_backup(request, client)
             except:
                 self.handle_suddenly_exit(client)
                 print(f"{client.getpeername()[0]}:{client.getpeername()[1]} has disconnected")
                 client.close()
                 break
-    
-    def conn_server_backup(self, server_backup: socket.socket):
-        self.server_backup = server_backup
-        self.server_backup.send(pickle.dumps({
-                "type": "response",
-                "action": "conn_server_main",
-                "status": 200,
-            }))
-        self.send_conn_to_server_backup()
+            
+    def connect_backup(self, request, client):
+        if request["user"] is not None:
+            self.connections[request["user"]] = (client, request["payload"]["peer_addr"])
+        client.send(pickle.dumps({
+            "type": "response",
+            "action": "connect_backup",
+            "status": 200,
+            
+        }))
         
-    def send_conn_to_server_backup(self):
-        try:
-            connections = dict[str, tuple[str, int]]()
-            for key in self.connections:
-                connections[key] = self.connections[key][1]
-            self.server_backup.send(pickle.dumps({
-                "type": "request",
-                "action": "send_connections",
-                "payload": {
-                    "connections": connections,
-                }
-            }))
-            self.server_backup.recv(BUFFE_SIZE)
-        except:
-            self.server_backup = None
-    
     def login(self, payload, client: socket.socket):
         username = payload["username"]
         password = payload["password"]
@@ -121,9 +118,6 @@ class Server:
                 response["payload"] = f"User {username} log in successfully."
                 
                 client.send(pickle.dumps(response))
-                
-                if self.server_backup is not None:
-                    self.send_conn_to_server_backup()
                 return
             
         response["status"] = 400
@@ -140,10 +134,7 @@ class Server:
             "action": "logout",
             "payload": "User log out successfully."
         }
-        client.send(pickle.dumps(response)) 
-        
-        if self.server_backup is not None:
-            self.send_conn_to_server_backup()          
+        client.send(pickle.dumps(response))         
              
     def send_peer_info(self, request, client: socket.socket):
         response = {
@@ -163,19 +154,9 @@ class Server:
             
         client.send(pickle.dumps(response))
         
-        if self.server_backup is not None:
-            self.send_conn_to_server_backup()
-      
-    def handle_suddenly_exit(self, client: socket.socket):
-        connections = self.connections.copy()
-        for conn in self.connections:
-            if self.connections[conn][0] == client:
-                del connections[conn]
-        self.connections = connections
-
 if __name__ == "__main__":
     try: 
-        server = Server()
+        server = Server_Backup()
         server.run()
         inp = input()
         if inp == "close":
